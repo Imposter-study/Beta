@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+
+  django_app:
+    build:
+      context: .
+    container_name: django_app
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    networks:
+      - app_network
+    volumes:
+      - .:/app
+    command: python manage.py runserver 0.0.0.0:8000
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  postgres_data:

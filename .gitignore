@@ -1,0 +1,72 @@
+# Custom
+.env
+envs/
+vectors_data/
+# venv
+venv/
+.venv/
+.python-version/
+# Python
+*.pyc
+*.pyo
+__pycache__/
+# Django
+db.sqlite3
+*.sqlite3
+*.log
+*.pot
+*.pyc
+*.pyo
+__pycache__/
+media/
+static/
+# IDE specific files (VSCode, PyCharm, etc.)
+.vscode/
+.idea/
+# OS-specific files
+.DS_Store   # macOS
+Thumbs.db   # Windows
+# Temporary files
+*.swp
+*.bak
+*.swm
+*.swo
+# pytest
+.pytest_cache/
+*.pytest_cache/
+.cache/
+# server
+docker-compose.override.yml
+# Node.js 관련 설정
+node_server/node_modules/
+node_server/dist/
+node_server/build/
+node_server/coverage/
+node_server/.npm/
+node_server/npm-debug.log
+node_server/yarn-debug.log
+node_server/yarn-error.log
+node_server/package-lock.json
+node_server/.env.local
+node_server/.env.development.local
+node_server/.env.test.local
+node_server/.env.production.local
+# Node.js 로그 파일
+node_server/logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+# TypeScript 관련 (만약 TypeScript를 사용한다면)
+node_server/*.tsbuildinfo
+### Linux ###
+nohup.out
+*~
+# temporary files which can be created if a process still has a handle open of a deleted file
+.fuse_hidden*
+# KDE directory preferences
+.directory
+# Linux trash folder which might appear on any partition or disk
+.Trash-*
+# .nfs files are created when an open file is removed but is still being accessed
+.nfs*

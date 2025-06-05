@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:15
-    container_name: postgres_db
+    container_name: beta_postgres_db 
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
@@ -16,7 +16,7 @@ services:
   django_app:
     build:
       context: .
-    container_name: django_app
+    container_name: beta_django_app
     env_file:
       - .env
     ports:

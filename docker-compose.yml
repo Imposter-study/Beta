@@ -27,7 +27,11 @@ services:
       - app_network
     volumes:
       - .:/app
-    command: python manage.py runserver 0.0.0.0:8000
+    command: >
+      sh -c "sleep 3 &&
+            python manage.py makemigrations &&
+            python manage.py migrate &&
+            python manage.py runserver 0.0.0.0:8000"
 
 networks:
   app_network:

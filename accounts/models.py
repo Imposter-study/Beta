@@ -16,3 +16,6 @@ class User(AbstractUser):
     # follower = models.ManyToManyField(
     #    "self", symmetrical=False, related_name="following", blank=True
     # )
+
+
+

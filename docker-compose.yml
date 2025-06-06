@@ -33,9 +33,26 @@ services:
             python manage.py migrate &&
             python manage.py runserver 0.0.0.0:8000"
 
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: beta_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+    networks:
+      - app_network
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
 networks:
   app_network:
     driver: bridge
 
 volumes:
   postgres_data:
+  pgadmin_data:

@@ -29,7 +29,7 @@ class UserCreateView(APIView):
         summary="회원가입",
         description="새로운 ExampleModel을 생성하는 API입니다.",
         request=SignUpSerializer,
-        responses={201: SignUpSerializer},
+        responses={201: OpenApiResponse(description="회원가입 성공")},
     )
     def post(self, request):
         serializer = SignUpSerializer(data=request.data)
@@ -47,8 +47,8 @@ class UserCreateView(APIView):
         description="본인 혹은 타인의 프로필을 조회합니다.",
         responses={
             200: UserProfileSerializer,
-            401: {"message": "로그인이 필요합니다."},
-            404: {"message": "사용자를 찾을 수 없습니다."},
+            401: OpenApiResponse(description="로그인이 필요합니다."),
+            404: OpenApiResponse(description="사용자를 찾을 수 없습니다."),
         },
     ),
     put=extend_schema(
@@ -57,9 +57,9 @@ class UserCreateView(APIView):
         request=MyProfileSerializer,
         responses={
             200: MyProfileSerializer,
-            400: {"message": "잘못된 요청입니다."},
-            403: {"message": "수정 권한이 없습니다."},
-            404: {"message": "사용자를 찾을 수 없습니다."},
+            400: OpenApiResponse(description="잘못된 요청입니다."),
+            403: OpenApiResponse(description="수정 권한이 없습니다."),
+            404: OpenApiResponse(description="사용자를 찾을 수 없습니다."),
         },
     ),
 )
@@ -97,8 +97,10 @@ class LoginView(APIView):
         description="아이디와 비밀번호를 입력해주세요(JWT 토큰 반환)",
         request=LoginSerializer,
         responses={
-            200: LoginSerializer,
-            400: {"message": "올바른 아이디와, 비밀번호를 입력해주세요"},
+            200: OpenApiResponse(description="로그인 성공"),
+            400: OpenApiResponse(
+                description="올바른 아이디와, 비밀번호를 입력해주세요"
+            ),
         },
     )
     def post(self, request):
@@ -132,8 +134,8 @@ class LogoutView(APIView):
             }
         },
         responses={
-            200: {"detail": "로그아웃 성공!"},
-            400: {"detail": "유효하지 않은 토큰입니다!!"},
+            200: OpenApiResponse(description="로그아웃 성공!"),
+            400: OpenApiResponse(description="유효하지 않은 토큰입니다!!"),
         },
     )
     def post(self, request):
@@ -160,9 +162,9 @@ class PasswordChangeView(APIView):
         description="이전비밀번호와 새로운 비밀번호 입력",
         request=PasswordChangeSerializer,
         responses={
-            201: PasswordChangeSerializer,
-            400: {"message": "올바른 이전 비밀번호를 입력해주세요"},
-            405: {"message": "로그인해주세요(올바른 인증)"},
+            201: OpenApiResponse(description="비밀번호 변경 성공"),
+            400: OpenApiResponse(description="올바른 이전 비밀번호를 입력해주세요"),
+            405: OpenApiResponse(description="로그인해주세요(올바른 인증)"),
         },
     )
     def put(self, request):
@@ -189,8 +191,8 @@ class DeactivateAccountView(APIView):
         description="비밀번호 입력해주세요",
         request=DeactivateAccountSerializer,
         responses={
-            200: {"detail": "Account deactivated."},
-            400: {"message": "비밀번호가 일치하지 않습니다."},
+            200: OpenApiResponse(description="Account deactivated."),
+            400: OpenApiResponse(description="비밀번호가 일치하지 않습니다."),
         },
     )
     def delete(self, request):

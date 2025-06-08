@@ -1,10 +1,12 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from django.contrib.auth import authenticate
 
 
 User = get_user_model()
 
 
+# 회원가입
 class SignUpSerializer(serializers.ModelSerializer):
     password_confirm = serializers.CharField(write_only=True)
 
@@ -29,7 +31,7 @@ class SignUpSerializer(serializers.ModelSerializer):
         user = self.Meta.model(**validated_data)
 
         user.set_password(password)
-        user.is_active = False
+        user.is_active = True
         user.save()
         return user
 
@@ -60,12 +62,41 @@ class SignUpSerializer(serializers.ModelSerializer):
         return data
 
 
+# 로그인
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
+
+    def validate(self, data):
+        user = authenticate(**data)
+        if user and user.is_active:
+            return user
+        raise serializers.ValidationError("Invalid credentials")
+
+
+# 비밀번호 변경
+class PasswordChangeSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+
+
+# 회원 탈퇴
+class DeactivateAccountSerializer(serializers.Serializer):
+    password = serializers.CharField(write_only=True)
+
+    def validate_password(self, value):
+        user = self.context["request"].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("비밀번호가 일치하지 않습니다.")
+        return value
+
+
 # 내가 나의 프로필 조회,수정
+# TODO : 제타 아이디와 닉네임 고민
 class MyProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            "username",
             "nickname",
             "age",
             "gender",

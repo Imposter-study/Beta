@@ -7,5 +7,6 @@ urlpatterns = [
     path('signout/', views.LogoutView.as_view()),
     path('password/', views.PasswordChangeView.as_view()),
     path('delete/', views.DeactivateAccountView.as_view()),
+    path("social/signin/<str:provider>/", views.SocialSigninView.as_view()),
     path("<str:nickname>/", views.UserProfileView.as_view()),
 ]

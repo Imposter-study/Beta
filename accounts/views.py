@@ -8,7 +8,6 @@ from .serializers import SignUpSerializer, MyProfileSerializer, UserProfileSeria
 from rest_framework import status, permissions
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
 from .serializers import (
     SignUpSerializer,
     LoginSerializer,
@@ -16,12 +15,12 @@ from .serializers import (
     DeactivateAccountSerializer,
 )
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
 from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
     OpenApiResponse,
 )
+from django.conf import settings
 
 
 class UserCreateView(APIView):
@@ -209,3 +208,37 @@ class DeactivateAccountView(APIView):
                 status=status.HTTP_200_OK,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# 소셜 로그인
+class SocialSigninView(APIView):
+
+    KAKAO_AUTH_URL = "https://kauth.kakao.com/oauth/authorize"
+
+    # 리다이렉트 URI 생성
+    def get_redirect_kakao_uri(self, provider):
+        return f"{settings.REDIRECT_DOMAIN}/api/v1/accounts/social/callback/{provider}"
+
+    # 카카오 인증 URL 생성
+    def get_kakao_auth_url(self, client_id, redirect_uri):
+        params = {
+            "response_type": "code",
+            "client_id": client_id,
+            "redirect_uri": redirect_uri,
+        }
+        query_string = "&".join([f"{k}={v}" for k, v in params.items()])
+        return f"{self.KAKAO_AUTH_URL}?{query_string}"
+
+    # 소셜 로그인 주로직
+    def get(self, request, provider):
+        if provider.lower() != "kakao":
+            return Response(
+                {"error": "지원하지 않는 소셜 로그인 제공자입니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        else:
+            redirect_uri = self.get_redirect_kakao_uri(provider)
+            auth_url = self.get_kakao_auth_url(
+                client_id=settings.KAKAO_CLIENT_ID, redirect_uri=redirect_uri
+            )
+            return Response({"auth_url": auth_url})

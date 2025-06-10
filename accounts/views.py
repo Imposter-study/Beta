@@ -242,3 +242,86 @@ class SocialSigninView(APIView):
                 client_id=settings.KAKAO_CLIENT_ID, redirect_uri=redirect_uri
             )
             return Response({"auth_url": auth_url})
+
+
+# 소셜 로그인 콜백
+class SocialCallbackView(APIView):
+    
+    # 소셜 로그인 콜백 주로직
+    def get(self, request, provider):
+        code = request.GET.get("code")
+        if not code:
+            return Response(
+                {"error": "인증 코드가 없습니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        access_token = self.get_token(provider, code)
+        if not access_token:
+            return Response(
+                {"error": "액세스 토큰 발급 실패"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user_info = self.get_user(provider, access_token)
+        if not user_info:
+            return Response(
+                {"error": "사용자 정보 조회 실패"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = self.get_or_create_user(provider, user_info)
+        if not user:
+            return Response(
+                {"error": "사용자 생성 실패"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # JWT 토큰 생성
+        refresh = RefreshToken.for_user(user)
+        tokens = {
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+        }
+
+        redirect_url = settings.FRONT_DOMAIN.split(",")[0]
+        return redirect(f"{redirect_url}?token={tokens['access']}")
+    #
+    def get_token(self, provider, code):
+        if provider == "kakao":
+            token_url = "https://kauth.kakao.com/oauth/token"
+            client_id = settings.KAKAO_CLIENT_ID
+
+        domain = settings.REDIRECT_DOMAIN
+
+        data = {
+            "grant_type": "authorization_code",
+            "client_id": client_id,
+            "redirect_uri": f"{domain}/api/v1/accounts/social/callback/{provider}",
+            "code": code,
+        }
+
+        response = requests.post(token_url, data)
+        return response.json().get("access_token")
+
+    def get_user(self, provider, access_token):
+        if provider == "kakao":
+            user_info_url = "https://kapi.kakao.com/v2/user/me"
+
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/x-www-form-urlencoded;charset=utf-8",
+        }
+        response = requests.get(user_info_url, headers=headers)
+        return response.json().get("kakao_account")
+
+    def get_or_create_user(self, provider, user_info):
+        defaults = {"nickname": user_info.get("profile").get("nickname")}
+
+        # 유저가 이미 있으면 유저 정보를 가져오고 없으면 유저 생성
+        user, created = User.objects.get_or_create(
+            email=user_info.get("email"), defaults=defaults
+        )
+        if created:
+            user.set_unusable_password()
+            user.save()
+        return user

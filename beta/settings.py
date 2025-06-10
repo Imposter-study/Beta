@@ -129,6 +129,9 @@ AUTH_USER_MODEL = "accounts.User"
 KAKAO_CLIENT_ID = os.getenv("KAKAO_CLIENT_ID")
 REDIRECT_DOMAIN = os.getenv("REDIRECT_DOMAIN")
 
+# Frontend
+FRONT_DOMAIN = os.getenv("FRONT_DOMAIN")
+
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 

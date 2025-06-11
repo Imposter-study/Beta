@@ -1,4 +1,4 @@
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -14,7 +14,6 @@ from .serializers import (
     PasswordChangeSerializer,
     DeactivateAccountSerializer,
 )
-from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
@@ -246,7 +245,7 @@ class SocialSigninView(APIView):
 
 # 소셜 로그인 콜백
 class SocialCallbackView(APIView):
-    
+
     # 소셜 로그인 콜백 주로직
     def get(self, request, provider):
         code = request.GET.get("code")
@@ -283,9 +282,27 @@ class SocialCallbackView(APIView):
             "access": str(refresh.access_token),
         }
 
-        redirect_url = settings.FRONT_DOMAIN.split(",")[0]
-        return redirect(f"{redirect_url}?token={tokens['access']}")
-    #
+        # HTTP-only 쿠키로 토큰 전송
+        response = redirect(settings.FRONT_DOMAIN.split(",")[0])
+        response.set_cookie(
+            key="access_token",
+            value=tokens["access"],
+            httponly=True,
+            secure=True,  # HTTPS에서만 전송
+            samesite="Lax",  # CSRF 보호
+            max_age=60 * 15,  # 15분 유효
+        )
+        response.set_cookie(
+            key="refresh_token",
+            value=tokens["refresh"],
+            httponly=True,
+            secure=True,
+            samesite="Lax",
+            max_age=3600 * 24 * 7,  # 7일 유효
+        )
+        return response
+
+    # 소셜 로그인 토큰 발급
     def get_token(self, provider, code):
         if provider == "kakao":
             token_url = "https://kauth.kakao.com/oauth/token"

@@ -169,5 +169,3 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # 환경변수 임포트
 OPENAI_API_KEY = env("OPENAI_API_KEY")
 CONVERSATION_HISTORY_LIMIT = int(env("CONVERSATION_HISTORY_LIMIT"))
-SYSTEM_PROMPT = """당신은 도움이 되는 AI 어시스턴트입니다. 
-사용자의 질문에 친절하고 정확하게 답변해주세요."""

@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated
+
 from .models import User
 from .serializers import (
     SignUpSerializer,
@@ -211,3 +213,19 @@ class DeactivateAccountView(APIView):
                 status=status.HTTP_200_OK,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# 토근 갱신
+class AuthCheckView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="로그인 상태 확인",
+        description="access token이 유효한지 확인합니다. 유효하면 200, 만료되었거나 없으면 401 반환",
+        responses={
+            200: OpenApiResponse(description="인증 성공"),
+            401: OpenApiResponse(description="인증 실패"),
+        },
+    )
+    def get(self, request):
+        return Response({"detail": "Authenticated"}, status=status.HTTP_200_OK)

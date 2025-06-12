@@ -4,11 +4,26 @@ from rest_framework import status
 from .models import Room, Chat
 from .serializers import ChatRequestSerializer, RoomSerializer
 from .services import ChatService
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiResponse,
+)
 
 
 class ChatRoomView(APIView):
     """채팅 메시지 전송 API"""
 
+    @extend_schema(
+        summary="메시지 전송",
+        description="""
+    챗봇과 대화를 주고받을 수 있는 기능입니다.
+
+    테스트 가능한 챗봇 종류
+    - assistant
+    - teacher
+    - friend
+    """,
+    )
     def post(self, request):
         # 요청 데이터 검증
         serializer = ChatRequestSerializer(data=request.data)
@@ -47,6 +62,11 @@ class ChatRoomView(APIView):
 class RoomListView(APIView):
     """채팅방 목록 조회 API"""
 
+    @extend_schema(
+        summary="채팅방 조회",
+        description="현재 생성된 채팅방의 목록을 조회합니다.",
+        responses={201: OpenApiResponse(description="채팅방 목록 출력")},
+    )
     def get(self, request):
         rooms = Room.objects.all().order_by("-updated_at")
         serializer = RoomSerializer(rooms, many=True)
@@ -56,6 +76,14 @@ class RoomListView(APIView):
 class RoomDetailView(APIView):
     """특정 채팅방 상세 정보 및 대화 내역 조회 API"""
 
+    @extend_schema(
+        summary="채팅방 상세 조회",
+        description="채팅방에서 나눈 대화 내역을 출력합니다.",
+        responses={
+            201: OpenApiResponse(description="채팅 내역 출력"),
+            404: OpenApiResponse(description="채팅방을 찾을 수 없습니다."),
+        },
+    )
     def get(self, request, room_id):
         try:
             room = Room.objects.get(room_id=room_id)

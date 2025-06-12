@@ -3,12 +3,10 @@ from django.utils import timezone
 
 
 class Room(models.Model):
-    """채팅방 모델 - 각 챗봇마다 하나씩"""
+    """채팅방 모델, 각 챗봇마다 하나씩"""
 
     room_id = models.AutoField(primary_key=True)
-    character_id = models.CharField(
-        max_length=50, unique=True, verbose_name="챗봇 ID"  # 하나의 챗봇당 하나의 방
-    )
+    character_id = models.CharField(max_length=50, unique=True, verbose_name="챗봇 ID")
     title = models.CharField(max_length=200, verbose_name="채팅방 제목")
     created_at = models.DateTimeField(default=timezone.now, verbose_name="생성시간")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="수정시간")
@@ -39,7 +37,7 @@ class Chat(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name="수정시간")
 
     class Meta:
-        ordering = ["created_at"]  # 시간순 정렬
+        ordering = ["created_at"]
         verbose_name = "채팅 메시지"
         verbose_name_plural = "채팅 메시지들"
 

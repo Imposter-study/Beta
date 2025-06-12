@@ -20,6 +20,7 @@ from drf_spectacular.utils import (
     OpenApiResponse,
 )
 from django.conf import settings
+import requests
 
 
 class UserCreateView(APIView):

@@ -20,7 +20,7 @@ class ChatService:
             limit = getattr(settings, "CONVERSATION_HISTORY_LIMIT", 20)
 
         chats = Chat.objects.filter(room=room).order_by("-created_at")[:limit]
-        return list(reversed(chats))  # 시간순으로 정렬
+        return list(reversed(chats))
 
     def create_conversation_context(self, recent_messages, character_id):
         """대화 컨텍스트 생성 - 챗봇별 시스템 프롬프트"""
@@ -54,7 +54,7 @@ class ChatService:
             messages.append({"role": "user", "content": user_message})
 
             response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4o-mini",
                 messages=messages,
                 max_tokens=1000,
                 temperature=0.7,

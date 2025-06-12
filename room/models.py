@@ -6,9 +6,7 @@ class Room(models.Model):
     """채팅방 모델, 각 챗봇마다 하나씩"""
 
     room_id = models.AutoField(primary_key=True)
-    character_id = models.CharField(
-        max_length=50, unique=True, verbose_name="챗봇 ID"
-    )
+    character_id = models.CharField(max_length=50, unique=True, verbose_name="챗봇 ID")
     title = models.CharField(max_length=200, verbose_name="채팅방 제목")
     created_at = models.DateTimeField(default=timezone.now, verbose_name="생성시간")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="수정시간")

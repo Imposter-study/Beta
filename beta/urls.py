@@ -17,7 +17,6 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
-
 from drf_spectacular.views import (
     SpectacularAPIView,
     # SpectacularRedocView,
@@ -27,6 +26,7 @@ from drf_spectacular.views import (
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/accounts/", include("accounts.urls")),
+    path("api/v1/room/", include("room.urls")),
     # YOUR PATTERNS
     path("api/v1/schema/", SpectacularAPIView.as_view(), name="schema"),
     # Optional UI:

@@ -10,7 +10,7 @@ class User(AbstractUser):
     username = models.CharField(max_length=20, unique=True)
     nickname = models.CharField(max_length=20, unique=True)
     gender = models.CharField(default="O", choices=GENDER_CHOICES, max_length=1)
-    age = models.IntegerField(default=0)
+    birth_date = models.DateField(null=True, blank=True)
     introduce = models.TextField(blank=True, null=True)
 
     # profilepicture = models.ImageField(blank=True, null=True)

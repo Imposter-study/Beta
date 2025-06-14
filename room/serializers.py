@@ -10,8 +10,6 @@ class ChatSerializer(serializers.ModelSerializer):
 
 
 class RoomSerializer(serializers.ModelSerializer):
-    recent_chats = ChatSerializer(many=True, read_only=True, source="chats")
-
     class Meta:
         model = Room
         fields = [
@@ -20,7 +18,6 @@ class RoomSerializer(serializers.ModelSerializer):
             "title",
             "created_at",
             "updated_at",
-            "recent_chats",
         ]
         read_only_fields = ["room_id", "created_at", "updated_at"]
 

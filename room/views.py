@@ -23,6 +23,7 @@ class ChatRoomView(APIView):
     - teacher
     - friend
     """,
+        request=ChatRequestSerializer,
     )
     def post(self, request):
         # 요청 데이터 검증

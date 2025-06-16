@@ -8,7 +8,14 @@ from .serializers import SignUpSerializer, MyProfileSerializer, UserProfileSeria
 from rest_framework import status, permissions
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
+from django.conf import settings
+import requests
+from allauth.socialaccount.providers.kakao import views as kakao_view
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from dj_rest_auth.registration.views import SocialLoginView
+from allauth.socialaccount.models import SocialAccount
+from django.http import JsonResponse
+
 from .serializers import (
     SignUpSerializer,
     LoginSerializer,
@@ -16,7 +23,6 @@ from .serializers import (
     DeactivateAccountSerializer,
 )
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
 from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
@@ -209,3 +215,9 @@ class DeactivateAccountView(APIView):
                 status=status.HTTP_200_OK,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class KakaoLogin(SocialLoginView):
+    adapter_class = kakao_view.KakaoOAuth2Adapter
+    client_class = OAuth2Client
+    callback_url = settings.SOCIALACCOUNT_PROVIDERS["kakao"]["APP"]["redirect_uri"]

@@ -7,5 +7,6 @@ urlpatterns = [
     path("signout/", views.LogoutView.as_view()),
     path("password/", views.PasswordChangeView.as_view()),
     path("delete/", views.DeactivateAccountView.as_view()),
+    path("kakao/login/", views.KakaoLogin.as_view(), name="kakao_login"),
     path("<str:nickname>/", views.UserProfileView.as_view()),
 ]

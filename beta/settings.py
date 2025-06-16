@@ -50,6 +50,8 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     # apps
     "accounts",
+    "room",
+    "characters",
 ]
 
 # drf-spectacular
@@ -100,8 +102,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "beta.wsgi.application"
 
-
-
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
@@ -140,7 +140,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "ko-kr"
 
 TIME_ZONE = "Asia/Seoul"
 
@@ -154,7 +154,15 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# 환경변수 임포트
+OPENAI_API_KEY = env("OPENAI_API_KEY")
+CONVERSATION_HISTORY_LIMIT = int(env("CONVERSATION_HISTORY_LIMIT"))

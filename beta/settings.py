@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     # third-party
     "drf_spectacular",
     "rest_framework",
+    "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
     # apps
     "accounts",
@@ -67,6 +68,7 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": True,  # 토큰갱신후 블랙리스트 적용
     "BLACKLIST_AFTER_ROTATION": True,  # 사용자가 로그인할 때마다 `last_login` 필드 업데이트
+    "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
 
@@ -99,13 +101,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "beta.wsgi.application"
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ),
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-}
-
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases

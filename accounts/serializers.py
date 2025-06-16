@@ -17,7 +17,7 @@ class SignUpSerializer(serializers.ModelSerializer):
             "password",
             "password_confirm",
             "nickname",
-            "age",
+            "birth_date",
             "gender",
             "introduce",
         ]
@@ -98,7 +98,7 @@ class MyProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             "nickname",
-            "age",
+            "birth_date",
             "gender",
             "introduce",
         ]

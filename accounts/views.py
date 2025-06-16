@@ -24,24 +24,24 @@ from drf_spectacular.utils import (
 class UserCreateView(APIView):
     @extend_schema(
         summary="회원가입",
-        description="새로운 ExampleModel을 생성하는 API입니다.",
+        description="새로운 유저를 생성하고, 바로 JWT 토큰을 발급합니다.",
         request=SignUpSerializer,
-        responses={201: OpenApiResponse(description="회원가입 성공")},
+        responses={201: OpenApiResponse(description="회원가입 및 로그인 성공")},
     )
     def post(self, request):
         serializer = SignUpSerializer(data=request.data)
 
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            user = serializer.save()
+            refresh = RefreshToken.for_user(user)
 
-        # serializer = SignUpSerializer(data=request.data)
-        # serializer.is_valid(raise_exception=True)
-        # serializer.save()
-        # return Response(serializer.data, status=status.HTTP_201_CREATED)
-        # 예외가 발생하면 바로 DRF가 400 응답 처리해줘서 코드 더 짧고 직관적으로 볼수 있읍
+            return Response({
+                "user": serializer.data,
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+            }, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema_view(

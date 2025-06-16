@@ -24,6 +24,11 @@ class ChatRoomView(APIView):
     - friend
     """,
         request=ChatRequestSerializer,
+        responses={
+            200: ChatRequestSerializer,
+            400: OpenApiResponse(description="잘못된 요청"),
+            401: OpenApiResponse(description="로그인 필요"),
+        },
     )
     def post(self, request):
         # 요청 데이터 검증
@@ -36,19 +41,14 @@ class ChatRoomView(APIView):
 
         chat_service = ChatService()
 
-        # 1. 채팅방 가져오기 또는 생성
         room = chat_service.get_or_create_room(character_id)
 
-        # 2. 사용자 메시지를 DB에 저장
         user_chat_obj = chat_service.save_chat(room, user_message, "user")
 
-        # 3. OpenAI API 호출하여 응답 받기
         ai_response = chat_service.get_ai_response(room, user_message)
 
-        # 4. AI 응답을 DB에 저장
         ai_chat_obj = chat_service.save_chat(room, ai_response, "ai")
 
-        # 5. 응답 반환
         response_data = {
             "room_id": room.room_id,
             "character_id": character_id,
@@ -66,7 +66,9 @@ class RoomListView(APIView):
     @extend_schema(
         summary="채팅방 조회",
         description="현재 생성된 채팅방의 목록을 조회합니다.",
-        responses={201: OpenApiResponse(description="채팅방 목록 출력")},
+        responses={
+            200: ChatRequestSerializer,
+        },
     )
     def get(self, request):
         rooms = Room.objects.all().order_by("-updated_at")
@@ -81,8 +83,8 @@ class RoomDetailView(APIView):
         summary="채팅방 상세 조회",
         description="채팅방에서 나눈 대화 내역을 출력합니다.",
         responses={
-            201: OpenApiResponse(description="채팅 내역 출력"),
-            404: OpenApiResponse(description="채팅방을 찾을 수 없습니다."),
+            200: OpenApiResponse(description="채팅 내역 출력"),
+            404: OpenApiResponse(description="존재하지 않는 채팅방"),
         },
     )
     def get(self, request, room_id):
@@ -94,7 +96,6 @@ class RoomDetailView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        # 채팅방 정보와 함께 최근 채팅 내역 반환
         chats = Chat.objects.filter(room=room).order_by("created_at")
 
         response_data = {

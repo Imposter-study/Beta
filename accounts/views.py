@@ -4,6 +4,14 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.conf import settings
+import requests
+from allauth.socialaccount.providers.kakao import views as kakao_view
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from dj_rest_auth.registration.views import SocialLoginView
+from allauth.socialaccount.models import SocialAccount
+from django.http import JsonResponse
+
 
 from .models import User
 from .serializers import (
@@ -213,3 +221,24 @@ class DeactivateAccountView(APIView):
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class KakaoLogin(SocialLoginView):
+    adapter_class = kakao_view.KakaoOAuth2Adapter
+    client_class = OAuth2Client
+    callback_url = settings.SOCIALACCOUNT_PROVIDERS["kakao"]["APP"]["redirect_uri"]
+
+    @extend_schema(
+        summary="카카오 소셜 로그인",
+        description="카카오 OAuth2 인증을 통해 소셜 로그인을 수행합니다.",
+        responses={
+            200: OpenApiResponse(
+                description="로그인 성공. JWT 토큰 등 인증 정보 반환."
+            ),
+            400: OpenApiResponse(
+                description="인증 실패. 잘못된 토큰 또는 유효하지 않은 요청."
+            ),
+        },
+        tags=["소셜 로그인"],
+    )
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)

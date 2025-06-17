@@ -33,6 +33,14 @@ DEBUG = env("DEBUG")
 
 ALLOWED_HOSTS = []
 
+# CORS 설정
+CORS_ALLOW_ALL_ORIGINS = True  # 개발 환경에서 모든 도메인 허용 (배포 시에는 특정 도메인만 허용하도록 변경예정)
+
+AUTHENTICATION_BACKENDS = (
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+)
+
 
 # Application definition
 
@@ -43,23 +51,34 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",  # allauth에 필요
     # third-party
     "drf_spectacular",
     "rest_framework",
+    "rest_framework.authtoken",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
+    "corsheaders",  # CORS 헤더
+    # allauth
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.kakao",
+    # dj_rest_auth
+    "dj_rest_auth",
+    "dj_rest_auth.registration",
     # apps
     "accounts",
     "room",
     "characters",
 ]
 
-# drf-spectacular
 REST_FRAMEWORK = {
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_AUTHENTICATION_CLASSES": (
+        "dj_rest_auth.jwt_auth.JWTCookieAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 
@@ -73,11 +92,13 @@ SIMPLE_JWT = {
 
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "allauth.account.middleware.AccountMiddleware",  # allauth 필수
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -101,6 +122,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "beta.wsgi.application"
+
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
@@ -163,6 +185,27 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+SITE_ID = 1  # allauth에 필요
+LOGIN_REDIRECT_URL = env("REDIRECT_URL")  # 로그인 성공 후 리다이렉트 될 URL
+ACCOUNT_LOGOUT_REDIRECT_URL = env("REDIRECT_URL")  # 로그아웃 후 리다이렉트 될 URL
+REST_USE_JWT = True
+
+SOCIALACCOUNT_ADAPTER = "accounts.adapters.CustomSocialAccountAdapter"
+
+ACCOUNT_SIGNUP_FIELDS = ["username*", "nickname*", "email"]
+ACCOUNT_LOGIN_METHODS = {"username"}
+
 # 환경변수 임포트
 OPENAI_API_KEY = env("OPENAI_API_KEY")
 CONVERSATION_HISTORY_LIMIT = int(env("CONVERSATION_HISTORY_LIMIT"))
+
+# Kakao 소셜 로그인 설정
+SOCIALACCOUNT_PROVIDERS = {
+    "kakao": {
+        "APP": {
+            "client_id": env("KAKAO_CLIENT_ID"),
+            "secret": env("KAKAO_CLIENT_SECRET"),
+            "redirect_uri": env("REDIRECT_URL"),
+        }
+    }
+}

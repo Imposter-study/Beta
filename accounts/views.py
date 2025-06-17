@@ -11,7 +11,7 @@ from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.models import SocialAccount
 from django.http import JsonResponse
-
+from allauth.socialaccount.providers.google import views as google_view
 
 from .models import User
 from .serializers import (
@@ -192,7 +192,7 @@ class PasswordChangeView(APIView):
             return Response({"detail": "Password changed successfully."})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
- 
+
 # 회원 탈퇴
 class DeactivateAccountView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -221,7 +221,7 @@ class DeactivateAccountView(APIView):
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
+# 카카오 소셜 로그인
 class KakaoLogin(SocialLoginView):
     adapter_class = kakao_view.KakaoOAuth2Adapter
     client_class = OAuth2Client
@@ -242,3 +242,9 @@ class KakaoLogin(SocialLoginView):
     )
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
+
+# 구글 소셜 로그인
+class GoogleLogin(SocialLoginView):
+    adapter_class = google_view.GoogleOAuth2Adapter
+    client_class = OAuth2Client
+    callback_url = settings.SOCIALACCOUNT_PROVIDERS["google"]["APP"]["redirect_uri"]

@@ -1,12 +1,8 @@
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.exceptions import PermissionDenied
-from .models import User
-from .serializers import SignUpSerializer, MyProfileSerializer, UserProfileSerializer
 from rest_framework import status, permissions
-from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
 import requests
@@ -16,13 +12,16 @@ from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.models import SocialAccount
 from django.http import JsonResponse
 
+
+from .models import User
 from .serializers import (
     SignUpSerializer,
+    MyProfileSerializer,
+    UserProfileSerializer,
     LoginSerializer,
     PasswordChangeSerializer,
     DeactivateAccountSerializer,
 )
-from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
@@ -45,6 +44,12 @@ class UserCreateView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # serializer = SignUpSerializer(data=request.data)
+        # serializer.is_valid(raise_exception=True)
+        # serializer.save()
+        # return Response(serializer.data, status=status.HTTP_201_CREATED)
+        # 예외가 발생하면 바로 DRF가 400 응답 처리해줘서 코드 더 짧고 직관적으로 볼수 있읍
 
 
 @extend_schema_view(
@@ -134,7 +139,7 @@ class LogoutView(APIView):
             "application/json": {
                 "type": "object",
                 "properties": {
-                    "refresh": {"type": "string", "example": "qweasdzxc..."}
+                    "refresh": {"type": "string", "example": "qweasdzxc..."},
                 },
                 "required": ["refresh"],
             }
@@ -187,7 +192,7 @@ class PasswordChangeView(APIView):
             return Response({"detail": "Password changed successfully."})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
+ 
 # 회원 탈퇴
 class DeactivateAccountView(APIView):
     permission_classes = [permissions.IsAuthenticated]

@@ -19,8 +19,6 @@ class User(AbstractUser):
     #    "self", symmetrical=False, related_name="following", blank=True
     # )
     def mark_as_deactivated(self):
-        self.is_deactivated = True
-        self.deactivated_at = timezone.now()
         self.is_active = False
         self.save()
 

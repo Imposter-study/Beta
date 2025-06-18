@@ -1,4 +1,4 @@
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.chains import ConversationChain
 from langchain.prompts import (
@@ -16,11 +16,11 @@ logger = logging.getLogger(__name__)
 
 class ChatService:
     def __init__(self):
-        self.llm = ChatOpenAI(
-            model="gpt-4o-mini",
+        self.llm = ChatGoogleGenerativeAI(
+            model=settings.AI_MODEL,
             temperature=0.7,
             max_tokens=1000,
-            openai_api_key=settings.OPENAI_API_KEY,
+            google_api_key=settings.GOOGLE_API_KEY,
         )
 
     def get_or_create_room(self, character_id):

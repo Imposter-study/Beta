@@ -35,7 +35,6 @@ ALLOWED_HOSTS = []
 
 
 # Application definition
-
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -171,3 +170,4 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # 환경변수 임포트
 OPENAI_API_KEY = env("OPENAI_API_KEY")
 CONVERSATION_HISTORY_LIMIT = int(env("CONVERSATION_HISTORY_LIMIT"))
+VERBOSE = env("VERBOSE")

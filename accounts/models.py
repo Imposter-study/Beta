@@ -10,7 +10,8 @@ class User(AbstractUser):
     username = models.CharField(max_length=20, unique=True)
     nickname = models.CharField(max_length=20, unique=True)
     gender = models.CharField(default="O", choices=GENDER_CHOICES, max_length=1)
-    age = models.IntegerField(default=0)
+    email = models.EmailField(blank=True, null=True, unique=False)
+    birth_date = models.DateField(null=True, blank=True)
     introduce = models.TextField(blank=True, null=True)
 
     # profilepicture = models.ImageField(blank=True, null=True)
@@ -18,8 +19,6 @@ class User(AbstractUser):
     #    "self", symmetrical=False, related_name="following", blank=True
     # )
     def mark_as_deactivated(self):
-        self.is_deactivated = True
-        self.deactivated_at = timezone.now()
         self.is_active = False
         self.save()
 

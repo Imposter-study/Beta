@@ -192,7 +192,7 @@ class PasswordChangeView(APIView):
             return Response({"detail": "Password changed successfully."})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
- 
+
 # 회원 탈퇴
 class DeactivateAccountView(APIView):
     permission_classes = [permissions.IsAuthenticated]

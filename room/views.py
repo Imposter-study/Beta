@@ -61,7 +61,7 @@ class ChatRoomView(APIView):
 
 
 class RoomListView(APIView):
-    """채팅방 목록 조회 API"""
+    """채팅방 목록 조회"""
 
     @extend_schema(
         summary="채팅방 조회",
@@ -77,7 +77,7 @@ class RoomListView(APIView):
 
 
 class RoomDetailView(APIView):
-    """특정 채팅방 상세 정보 및 대화 내역 조회 API"""
+    """특정 채팅방 상세 정보 및 대화 내역 조회"""
 
     @extend_schema(
         summary="채팅방 상세 조회",

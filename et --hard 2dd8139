@@ -1,0 +1,70 @@
+[33md30695f[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mrefactor/room/langchain[m[33m, [m[1;31morigin/refactor/room/langchain[m[33m)[m 🩹 Fix: settings.py
+[33m2dd8139[m 🔀 Merge: Resolved merge conflicts
+[33meb31135[m 🩹 Fix: ai_model
+[33m2a1944f[m ♻️ Refactor: langchain
+[33mb13ce1b[m[33m ([m[1;31morigin/dev[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mdev[m[33m)[m Merge pull request #36 from Imposter-study/feature/allauth/kakao
+[33mcc711c3[m 🎨 Rafactor: accounts migrations
+[33me95af37[m Merge branch 'dev' into feature/allauth/kakao
+[33m6eab756[m ✨ Feat: sociallogin kakao swagger
+[33m04807e8[m ✨ Feat: sociallogin kakao setting
+[33m4516021[m ✨ Feat: sociallogin kakako
+[33mff1ebe2[m ♻️ Refactor: accounts email
+[33m1d9ffbb[m Merge pull request #34 from Imposter-study/refactor/accounts/package
+[33m895a9f2[m 🐛 Fix: accounts
+[33m66308fe[m 🔀 Merge: accounts
+[33m3a75bf8[m Merge branch 'dev' of https://github.com/Imposter-study/Beta into dev
+[33m835b6d6[m ♻️ Reafactor: accounts models
+[33m2212a59[m ♻️ Refactor: accounts package
+[33m97d234e[m Merge pull request #33 from Imposter-study/fix/room/swagger
+[33m0e9af9d[m[33m ([m[1;31morigin/fix/room/swagger[m[33m)[m 🩹 Fix: swagger
+[33mf836f1b[m Merge pull request #32 from Imposter-study/feature/character
+[33meab046b[m Merge pull request #31 from Imposter-study/fix/room/swagger
+[33m2e1d463[m 🩹 Fix: swagger
+[33m09de9ea[m ✨ Feat : add characters app
+[33m8e9028a[m ♻️ Refactor: user models
+[33mbf36208[m Merge pull request #29 from Imposter-study/feature/room/views
+[33m7ba514c[m ♻️ Refactor: user models
+[33m1873bee[m Merge pull request #27 from Imposter-study/docs/room/swagger
+[33m2ddacb0[m[33m ([m[1;31morigin/feature/room/views[m[33m)[m 📦️ Add: requirements
+[33m0f7eed6[m[33m ([m[1;31morigin/feature/room/serializer[m[33m)[m 🩹 Fix: RoomSerializer
+[33m01a9bfc[m[33m ([m[1;31morigin/docs/room/swagger[m[33m)[m Merge branch 'dev' into docs/room/swagger
+[33ma03c5cb[m 🎨 Form: black, description
+[33ma6eadae[m 📝 Docs: room app, swagger
+[33m25f8bd1[m Merge pull request #24 from Imposter-study/room/conversation/room
+[33m7684072[m ✨ Feat: token renewal
+[33mfc950a1[m[33m ([m[1;31morigin/room/conversation/room[m[33m)[m 🩹 Fix: settings
+[33m6d976cf[m ✨ Feat:chatting room
+[33mee093ba[m 🎨 Format: black
+[33m5cc3c30[m 🔀 Merge: merge accounts
+[33m6adea74[m[33m ([m[1;31morigin/room/conversation/jeil[m[33m)[m 🩹 Fox: modifying GPT model
+[33m160e3c0[m ✏️ Fix: Remove unused code
+[33m70a769e[m Merge pull request #16 from Imposter-study/feature/swagger
+[33m387e324[m Merge pull request #12 from Imposter-study/feature/accounts_profile
+[33m432fc87[m 🩹 Fix : drf_spectacular OpenApiResponse
+[33m813e760[m ✨ Feat: add accounts swagger
+[33m175b651[m 🔀 Merge accounts
+[33m3e77c6e[m Merge branch 'feature/accounts' of https://github.com/Imposter-study/Beta into feature/account)
+[33mb2d0540[m ✨ Feat: accounts signin, signout, password, delete, models fix
+[33m6efc4c2[m ✨ Feat: userprofile
+[33m7c46285[m Merge branch 'feature/accounts' of https://github.com/Imposter-study/Beta into feature/accounts
+[33mf07a655[m ✨ Feat: sign up
+[33m635338a[m 🚧 Wip: accounts models.py
+[33mbb349b8[m Merge pull request #5 from Imposter-study/Seojeil-patch-1
+[33md21d19e[m Create pull_request_template.md
+[33m1b1be86[m Merge branch 'dev' into room/conversation/jeil
+[33mced01fc[m Merge pull request #4 from Imposter-study/deploy
+[33me2a8ce8[m[33m ([m[1;31morigin/deploy[m[33m)[m 🔨 Add: pgadmin
+[33m21a264e[m ✨ Feat: chatbot
+[33m4dc586b[m Merge branch 'dev' into room/conversation/jeil
+[33m6b3bf84[m Merge pull request #3 from Imposter-study/deploy
+[33me766abb[m 🩹 Fix: docker-compose
+[33m29a8140[m 🧪 Add: append room apps
+[33m3a10767[m Merge pull request #2 from Imposter-study/deploy
+[33m45c3ebf[m 🩹 Fix: env 수정
+[33m6af9cf5[m Merge branch 'dev' into feature/accounts
+[33mf328480[m ✨ Feat: save
+[33m2bf64de[m ✨ Feat: PostgreSQL setting
+[33ma7143cd[m ✨ Feat: Docker container build
+[33mbd59e53[m[33m ([m[1;31morigin/main[m[33m)[m ✨feat:requirements
+[33mf2e9f1b[m ✨feat:initial settup
+[33m0fd745d[m Initial commit

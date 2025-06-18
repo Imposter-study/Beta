@@ -251,6 +251,18 @@ class GoogleLogin(SocialLoginView):
     client_class = OAuth2Client
     callback_url = settings.SOCIALACCOUNT_PROVIDERS["google"]["APP"]["redirect_uri"]
 
+    @extend_schema(
+        summary="구글 소셜 로그인",
+        description="구글 OAuth2 인증을 통해 소셜 로그인을 수행합니다.",
+        responses={
+            200: OpenApiResponse(
+                description="로그인 성공. JWT 토큰 등 인증 정보 반환."
+            ),
+            400: OpenApiResponse(
+                description="인증 실패. 잘못된 토큰 또는 유효하지 않은 요청."
+            ),
+        },
+        tags=["소셜 로그인"],
+    )
     def post(self, request, *args, **kwargs):
-        print("request.data:", request.data)
         return super().post(request, *args, **kwargs)

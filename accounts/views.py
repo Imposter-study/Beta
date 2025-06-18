@@ -221,6 +221,7 @@ class DeactivateAccountView(APIView):
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 # 카카오 소셜 로그인
 class KakaoLogin(SocialLoginView):
     adapter_class = kakao_view.KakaoOAuth2Adapter
@@ -243,8 +244,13 @@ class KakaoLogin(SocialLoginView):
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
 
+
 # 구글 소셜 로그인
 class GoogleLogin(SocialLoginView):
     adapter_class = google_view.GoogleOAuth2Adapter
     client_class = OAuth2Client
     callback_url = settings.SOCIALACCOUNT_PROVIDERS["google"]["APP"]["redirect_uri"]
+
+    def post(self, request, *args, **kwargs):
+        print("request.data:", request.data)
+        return super().post(request, *args, **kwargs)

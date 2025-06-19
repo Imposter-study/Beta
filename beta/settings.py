@@ -43,7 +43,6 @@ AUTHENTICATION_BACKENDS = (
 
 
 # Application definition
-
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -199,8 +198,10 @@ ACCOUNT_SIGNUP_FIELDS = ["username*", "nickname*", "email"]
 ACCOUNT_LOGIN_METHODS = {"username"}
 
 # 환경변수 임포트
-OPENAI_API_KEY = env("OPENAI_API_KEY")
+GOOGLE_API_KEY = env("GOOGLE_API_KEY")
+AI_MODEL = env("AI_MODEL")
 CONVERSATION_HISTORY_LIMIT = int(env("CONVERSATION_HISTORY_LIMIT"))
+VERBOSE = env("VERBOSE")
 
 # 소셜 로그인 설정
 SOCIALACCOUNT_PROVIDERS = {

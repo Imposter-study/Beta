@@ -1,10 +1,11 @@
+import uuid
 from django.db import models
 from django.utils import timezone
 from accounts.models import User
 
 
 class Room(models.Model):
-    room_id = models.AutoField(primary_key=True)
+    room_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     user = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
     character_id = models.CharField(max_length=50, verbose_name="챗봇 ID")
     title = models.CharField(max_length=200, verbose_name="채팅방 제목")

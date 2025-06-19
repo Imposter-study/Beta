@@ -13,7 +13,6 @@ from drf_spectacular.utils import (
 
 class ChatRoomView(APIView):
     authentication_classes = [JWTAuthentication]
-    """채팅 메시지 전송 API"""
 
     @extend_schema(
         summary="메시지 전송",
@@ -63,38 +62,42 @@ class ChatRoomView(APIView):
 
 
 class RoomListView(APIView):
-    """채팅방 목록 조회"""
+    authentication_classes = [JWTAuthentication]
 
     @extend_schema(
         summary="채팅방 조회",
-        description="현재 생성된 채팅방의 목록을 조회합니다.",
+        description="현재 로그인 한 사용자의 채팅방의 목록을 조회합니다.",
         responses={
-            200: ChatRequestSerializer,
+            200: RoomSerializer(many=True),
+            400: OpenApiResponse(description="잘못된 요청"),
+            401: OpenApiResponse(description="로그인 필요"),
         },
     )
     def get(self, request):
-        rooms = Room.objects.all().order_by("-updated_at")
+        rooms = Room.objects.filter(user=request.user).order_by("-updated_at")
         serializer = RoomSerializer(rooms, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class RoomDetailView(APIView):
-    """특정 채팅방 상세 정보 및 대화 내역 조회"""
+    authentication_classes = [JWTAuthentication]
 
     @extend_schema(
         summary="채팅방 상세 조회",
-        description="채팅방에서 나눈 대화 내역을 출력합니다.",
+        description="로그인한 사용자가 채팅방에서 나눈 대화 내역을 출력합니다.",
         responses={
             200: OpenApiResponse(description="채팅 내역 출력"),
+            400: OpenApiResponse(description="잘못된 요청"),
+            401: OpenApiResponse(description="로그인 필요"),
             404: OpenApiResponse(description="존재하지 않는 채팅방"),
         },
     )
     def get(self, request, room_id):
         try:
-            room = Room.objects.get(room_id=room_id)
+            room = Room.objects.get(room_id=room_id, user=request.user)
         except Room.DoesNotExist:
             return Response(
-                {"error": "채팅방을 찾을 수 없습니다."},
+                {"error": "채팅방을 찾을 수 없거나 접근 권한이 없습니다."},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -102,6 +105,7 @@ class RoomDetailView(APIView):
 
         response_data = {
             "room_id": room.room_id,
+            "user_id": room.user.id,
             "character_id": room.character_id,
             "title": room.title,
             "created_at": room.created_at,

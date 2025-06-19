@@ -9,6 +9,7 @@ User = get_user_model()
 # 회원가입
 class SignUpSerializer(serializers.ModelSerializer):
     password_confirm = serializers.CharField(write_only=True)
+    nickname = serializers.CharField(required=False)
 
     class Meta:
         model = User

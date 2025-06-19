@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.kakao",
+    "allauth.socialaccount.providers.google",
     # dj_rest_auth
     "dj_rest_auth",
     "dj_rest_auth.registration",
@@ -173,8 +174,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = "static/"
-
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),
+]
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
@@ -185,8 +188,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 SITE_ID = 1  # allauth에 필요
-LOGIN_REDIRECT_URL = env("REDIRECT_URL")  # 로그인 성공 후 리다이렉트 될 URL
-ACCOUNT_LOGOUT_REDIRECT_URL = env("REDIRECT_URL")  # 로그아웃 후 리다이렉트 될 URL
+LOGIN_REDIRECT_URL = "/"  # 로그인 성공 후 리다이렉트 될 URL
+ACCOUNT_LOGOUT_REDIRECT_URL = "/"
 REST_USE_JWT = True
 
 SOCIALACCOUNT_ADAPTER = "accounts.adapters.CustomSocialAccountAdapter"
@@ -200,13 +203,20 @@ AI_MODEL = env("AI_MODEL")
 CONVERSATION_HISTORY_LIMIT = int(env("CONVERSATION_HISTORY_LIMIT"))
 VERBOSE = env("VERBOSE")
 
-# Kakao 소셜 로그인 설정
+# 소셜 로그인 설정
 SOCIALACCOUNT_PROVIDERS = {
     "kakao": {
         "APP": {
             "client_id": env("KAKAO_CLIENT_ID"),
             "secret": env("KAKAO_CLIENT_SECRET"),
-            "redirect_uri": env("REDIRECT_URL"),
+            "redirect_uri": env("KAKAO_REDIRECT_URL"),
         }
-    }
+    },
+    "google": {
+        "APP": {
+            "client_id": env("GOOGLE_CLIENT_ID"),
+            "secret": env("GOOGLE_CLIENT_SECRET"),
+            "redirect_uri": env("GOOGLE_REDIRECT_URL"),
+        },
+    },
 }

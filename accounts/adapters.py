@@ -14,4 +14,9 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
             user.nickname = kakao_nickname
             user.email = None
             user.set_unusable_password()
+
+        elif provider == "google":
+            google_uid = str(sociallogin.account.uid)
+            user.username = google_uid
+            user.set_unusable_password()
         return user

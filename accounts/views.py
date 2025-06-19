@@ -11,7 +11,7 @@ from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.models import SocialAccount
 from django.http import JsonResponse
-
+from allauth.socialaccount.providers.google import views as google_view
 
 from .models import User
 from .serializers import (
@@ -222,6 +222,7 @@ class DeactivateAccountView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# 카카오 소셜 로그인
 class KakaoLogin(SocialLoginView):
     adapter_class = kakao_view.KakaoOAuth2Adapter
     client_class = OAuth2Client
@@ -230,6 +231,29 @@ class KakaoLogin(SocialLoginView):
     @extend_schema(
         summary="카카오 소셜 로그인",
         description="카카오 OAuth2 인증을 통해 소셜 로그인을 수행합니다.",
+        responses={
+            200: OpenApiResponse(
+                description="로그인 성공. JWT 토큰 등 인증 정보 반환."
+            ),
+            400: OpenApiResponse(
+                description="인증 실패. 잘못된 토큰 또는 유효하지 않은 요청."
+            ),
+        },
+        tags=["소셜 로그인"],
+    )
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
+
+# 구글 소셜 로그인
+class GoogleLogin(SocialLoginView):
+    adapter_class = google_view.GoogleOAuth2Adapter
+    client_class = OAuth2Client
+    callback_url = settings.SOCIALACCOUNT_PROVIDERS["google"]["APP"]["redirect_uri"]
+
+    @extend_schema(
+        summary="구글 소셜 로그인",
+        description="구글 OAuth2 인증을 통해 소셜 로그인을 수행합니다.",
         responses={
             200: OpenApiResponse(
                 description="로그인 성공. JWT 토큰 등 인증 정보 반환."

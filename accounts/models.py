@@ -12,8 +12,10 @@ class User(AbstractUser):
     gender = models.CharField(default="O", choices=GENDER_CHOICES, max_length=1)
     birth_date = models.DateField(null=True, blank=True)
     introduce = models.TextField(blank=True, null=True)
+    profile_picture = models.ImageField(
+        upload_to="profile_pics/", blank=True, null=True
+    )
 
-    # profilepicture = models.ImageField(blank=True, null=True)
     # follower = models.ManyToManyField(
     #    "self", symmetrical=False, related_name="following", blank=True
     # )

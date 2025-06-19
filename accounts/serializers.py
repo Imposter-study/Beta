@@ -94,6 +94,10 @@ class DeactivateAccountSerializer(serializers.Serializer):
 # 내가 나의 프로필 조회,수정
 # TODO : 제타 아이디와 닉네임 고민
 class MyProfileSerializer(serializers.ModelSerializer):
+    profile_picture = serializers.ImageField(
+        required=False
+    )  # 명시적으로 선언해주면 Swagger가 더 잘 인식함
+
     class Meta:
         model = User
         fields = [
@@ -101,6 +105,7 @@ class MyProfileSerializer(serializers.ModelSerializer):
             "birth_date",
             "gender",
             "introduce",
+            "profile_picture",
         ]
 
 

@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.tokens import RefreshToken
-
+from rest_framework.parsers import MultiPartParser, FormParser
 from .models import User
 from .serializers import (
     SignUpSerializer,
@@ -68,7 +68,14 @@ class UserCreateView(APIView):
 )
 # 내가 나의 프로필을 볼때, 타인의 프로필을 볼때
 class UserProfileView(APIView):
+    parser_classes = [MultiPartParser, FormParser]  # 파일 업로드 가능하게 설정
 
+    @extend_schema(
+        summary="회원 프로필 수정",
+        request=MyProfileSerializer,
+        responses={200: MyProfileSerializer},
+        description="nickname에 해당하는 본인의 프로필을 수정합니다. 이미지도 수정 가능.",
+    )
     def get(self, request, nickname):
         user = get_object_or_404(User, nickname=nickname)
 
@@ -184,7 +191,7 @@ class PasswordChangeView(APIView):
             return Response({"detail": "Password changed successfully."})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
- 
+
 # 회원 탈퇴
 class DeactivateAccountView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -212,4 +219,3 @@ class DeactivateAccountView(APIView):
                 status=status.HTTP_200_OK,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-

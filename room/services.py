@@ -23,9 +23,14 @@ class ChatService:
             google_api_key=settings.GOOGLE_API_KEY,
         )
 
-    def get_or_create_room(self, character_id):
+    def get_or_create_room(self, character_id, user_id):
         room, created = Room.objects.get_or_create(
-            character_id=character_id, defaults={"title": f"{character_id} 채팅방"}
+            character_id=character_id,
+            user_id=user_id,
+            defaults={
+                "title": f"{character_id} 채팅방",
+                "user_id": user_id
+            }
         )
         return room
 

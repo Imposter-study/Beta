@@ -4,6 +4,12 @@ FROM python:3.12-slim
 # 작업 디렉토리
 WORKDIR /app
 
+# 필요한 시스템 패키지 설치 (psycopg2 빌드를 위해)
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 # requirements.txt를 컨테이너로 복사 후, 의존성 패키지 설치
 COPY requirements.txt /app/
 RUN pip install --upgrade pip

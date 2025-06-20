@@ -33,6 +33,7 @@ class ChatRoomView(APIView):
     )
     def post(self, request):
         serializer = ChatRequestSerializer(data=request.data)
+
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -41,7 +42,7 @@ class ChatRoomView(APIView):
 
         chat_service = ChatService()
 
-        room = chat_service.get_or_create_room(character_id, request.user.id)
+        room, character = chat_service.get_or_create_room(character_id, request.user.id)
 
         user_chat_obj = chat_service.save_chat(room, user_message, "user")
 

@@ -10,6 +10,10 @@ class ChatSerializer(serializers.ModelSerializer):
 
 
 class RoomSerializer(serializers.ModelSerializer):
+    character_image = serializers.SerializerMethodField()
+    character_name = serializers.SerializerMethodField()
+    last_message = serializers.SerializerMethodField()
+
     class Meta:
         model = Room
         fields = [
@@ -18,8 +22,25 @@ class RoomSerializer(serializers.ModelSerializer):
             "title",
             "created_at",
             "updated_at",
+            "character_image",
+            "character_name",
+            "last_message",
         ]
         read_only_fields = ["room_id", "created_at", "updated_at"]
+
+    def get_character_image(self, obj):
+        if obj.character_id.character_image:
+            return obj.character_id.character_image.url
+        return None
+
+    def get_character_name(self, obj):
+        return obj.character_id.name
+
+    def get_last_message(self, obj):
+        if hasattr(obj, "latest_chat") and obj.latest_chat:
+            return obj.latest_chat[0].content
+
+        return "대화를 시작해보세요!"
 
 
 class ChatRequestSerializer(serializers.Serializer):

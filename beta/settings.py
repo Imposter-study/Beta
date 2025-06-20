@@ -197,11 +197,13 @@ SOCIALACCOUNT_ADAPTER = "accounts.adapters.CustomSocialAccountAdapter"
 ACCOUNT_SIGNUP_FIELDS = ["username*", "nickname*", "email"]
 ACCOUNT_LOGIN_METHODS = {"username"}
 
-# 환경변수 임포트
+# LLM
 GOOGLE_API_KEY = env("GOOGLE_API_KEY")
 AI_MODEL = env("AI_MODEL")
 CONVERSATION_HISTORY_LIMIT = int(env("CONVERSATION_HISTORY_LIMIT"))
 VERBOSE = env("VERBOSE")
+TEMPERATURE = env("TEMPERATURE")
+MAX_TOKENS = env("MAX_TOKENS")
 
 # 소셜 로그인 설정
 SOCIALACCOUNT_PROVIDERS = {

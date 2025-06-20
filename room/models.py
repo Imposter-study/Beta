@@ -2,15 +2,16 @@ import uuid
 from django.db import models
 from django.utils import timezone
 from accounts.models import User
+from characters.models import Character
 
 
 class Room(models.Model):
     room_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     user = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
-    character_id = models.CharField(max_length=50, verbose_name="챗봇 ID")
-    title = models.CharField(max_length=200, verbose_name="채팅방 제목")
-    created_at = models.DateTimeField(default=timezone.now, verbose_name="생성시간")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="수정시간")
+    character_id = models.ForeignKey(Character, on_delete=models.CASCADE, default=1)
+    title = models.CharField(max_length=200)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = "채팅방"

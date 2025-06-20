@@ -65,7 +65,7 @@ class ChatService:
             - 공감하고 격려하는 톤으로 응답하세요
             - 때로는 유머를 섞어도 좋습니다""",
         }
-        return prompts.get(character_id, prompts["assistant"])
+        return prompts.get(character_id)
 
     def create_conversation_chain(self, character_id, memory):
         prompt = ChatPromptTemplate.from_messages(

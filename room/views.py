@@ -1,14 +1,15 @@
+from django.db.models import Prefetch
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from .models import Room, Chat
-from .serializers import ChatRequestSerializer, RoomSerializer
-from .services import ChatService
 from drf_spectacular.utils import (
     extend_schema,
     OpenApiResponse,
 )
+from .models import Room, Chat
+from .serializers import ChatRequestSerializer, RoomSerializer
+from .services import ChatService
 
 
 class ChatRoomView(APIView):
@@ -49,7 +50,7 @@ class ChatRoomView(APIView):
         response_data = {
             "room_id": room.room_id,
             "user_id": room.user.id,
-            "character_id": character_id,
+            "character_id": character.name,
             "user_message": user_message,
             "ai_response": ai_response,
             "created_at": ai_chat_obj.created_at,
@@ -71,7 +72,19 @@ class RoomListView(APIView):
         },
     )
     def get(self, request):
-        rooms = Room.objects.filter(user=request.user).order_by("-updated_at")
+        rooms = (
+            Room.objects.filter(user=request.user)
+            .select_related("character_id")
+            .prefetch_related(
+                Prefetch(
+                    "chats",
+                    queryset=Chat.objects.order_by("-created_at")[:1],
+                    to_attr="latest_chat",
+                )
+            )
+            .order_by("-updated_at")
+        )
+
         serializer = RoomSerializer(rooms, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 

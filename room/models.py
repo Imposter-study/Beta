@@ -22,8 +22,6 @@ class Room(models.Model):
 
 
 class Chat(models.Model):
-    """채팅 메시지 모델"""
-
     ROLE_CHOICES = [
         ("user", "User"),
         ("ai", "AI"),

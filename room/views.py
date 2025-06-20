@@ -18,11 +18,7 @@ class ChatRoomView(APIView):
         summary="메시지 전송",
         description="""
     챗봇과 대화를 주고받을 수 있는 기능입니다.
-
-    테스트 가능한 챗봇 종류
-    - assistant
-    - teacher
-    - friend
+    character에서 캐릭터를 생성하고 캐릭터 id를 입력하여 대화합니다.
     """,
         request=ChatRequestSerializer,
         responses={

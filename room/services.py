@@ -31,8 +31,8 @@ class ChatService:
         user = User.objects.get(id=user_id)
 
         room, created = Room.objects.get_or_create(
+            user=user,
             character_id=character,
-            user_id=user,
             defaults={"title": f"{character.name} 채팅방"},
         )
         return room, character

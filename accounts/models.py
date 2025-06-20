@@ -14,6 +14,7 @@ class User(AbstractUser):
     username = models.CharField(max_length=20, unique=True)
     nickname = models.CharField(max_length=30, unique=True, blank=True, null=True)
     gender = models.CharField(default="O", choices=GENDER_CHOICES, max_length=1)
+    email = models.EmailField(blank=True, null=True, unique=False)
     birth_date = models.DateField(null=True, blank=True)
     introduce = models.TextField(blank=True, null=True)
     profile_picture = models.ImageField(

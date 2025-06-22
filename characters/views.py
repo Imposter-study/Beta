@@ -13,7 +13,7 @@ from drf_spectacular.utils import (
     OpenApiParameter,
 )
 from .models import Character
-from .serializers import CharacterDetailSerializer, CharacterBaseSerializer
+from .serializers import CharacterSerializer, CharacterSearchSerializer
 
 
 @extend_schema_view(
@@ -21,15 +21,15 @@ from .serializers import CharacterDetailSerializer, CharacterBaseSerializer
         summary="캐릭터 조회",
         description="캐릭터를 조회합니다.",
         responses={
-            200: CharacterBaseSerializer,
+            200: CharacterSerializer,
         },
     ),
     post=extend_schema(
         summary="캐릭터 생성",
         description="캐릭터를 생성합니다.",
-        request=CharacterDetailSerializer,
+        request=CharacterSerializer,
         responses={
-            201: CharacterDetailSerializer,
+            201: CharacterSerializer,
             400: OpenApiResponse(description="잘못된 요청입니다."),
             401: OpenApiResponse(description="로그인이 필요합니다."),
         },
@@ -46,13 +46,13 @@ class CharacterAPIView(APIView):
 
     def get(self, request):
         characters = Character.objects.filter(is_character_public=True)
-        serializer = CharacterBaseSerializer(
+        serializer = CharacterSerializer(
             characters, many=True, context={"request": request}
         )
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = CharacterDetailSerializer(data=request.data)
+        serializer = CharacterSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -64,7 +64,7 @@ class CharacterAPIView(APIView):
         summary="특정 캐릭터 조회",
         description="PK 값으로 특정 캐릭터를 조회합니다",
         responses={
-            200: CharacterDetailSerializer,
+            200: CharacterSerializer,
             401: OpenApiResponse(description="로그인이 필요합니다."),
             403: OpenApiResponse(description="접근 권한이 없습니다."),
             404: OpenApiResponse(description="캐릭터를 찾을 수 없습니다."),
@@ -73,9 +73,9 @@ class CharacterAPIView(APIView):
     put=extend_schema(
         summary="캐릭터 수정",
         description="PK 값으로 특정 캐릭터를 수정합니다",
-        request=CharacterDetailSerializer,
+        request=CharacterSerializer,
         responses={
-            200: CharacterDetailSerializer,
+            200: CharacterSerializer,
             400: OpenApiResponse(description="잘못된 요청입니다."),
             401: OpenApiResponse(description="로그인이 필요합니다."),
             403: OpenApiResponse(description="접근 권한이 없습니다."),
@@ -107,12 +107,12 @@ class CharacterDetailAPIView(APIView):
 
     def get(self, request, pk):
         character = self.get_object(pk)
-        serializer = CharacterDetailSerializer(character, context={"request": request})
+        serializer = CharacterSerializer(character, context={"request": request})
         return Response(serializer.data)
 
     def put(self, request, pk):
         character = self.get_object(pk)
-        serializer = CharacterDetailSerializer(
+        serializer = CharacterSerializer(
             character, data=request.data, partial=True, context={"request": request}
         )
         if serializer.is_valid():
@@ -139,7 +139,7 @@ class CharacterSearchAPIView(APIView):
             ),
         ],
         responses={
-            200: CharacterBaseSerializer(many=True),
+            200: CharacterSearchSerializer(many=True),
             404: OpenApiResponse(description="해당 이름의 캐릭터가 없습니다."),
         },
         description="이름 일부 문자열 포함하는 공개 캐릭터 목록 조회",
@@ -158,7 +158,7 @@ class CharacterSearchAPIView(APIView):
         )
         if not characters.exists():
             raise Http404("해당 이름의 캐릭터가 없습니다.")
-        serializer = CharacterBaseSerializer(
+        serializer = CharacterSearchSerializer(
             characters, many=True, context={"request": request}
         )
         return Response(serializer.data)

@@ -43,7 +43,7 @@ class CharacterAPIView(APIView):
         return [IsAuthenticated()]
 
     def get(self, request):
-        characters = Character.objects.all()
+        characters = Character.objects.filter(is_character_public=True)
         serializer = CharacterSerializer(characters, many=True)
         return Response(serializer.data)
 
@@ -93,7 +93,6 @@ class CharacterDetailAPIView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    # 없으면 404, 권한은 403
     def get_object(self, pk):
         character = get_object_or_404(Character, pk=pk)
         if character.user != self.request.user:

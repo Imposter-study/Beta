@@ -96,17 +96,19 @@ class CharacterDetailAPIView(APIView):
     def get_object(self, pk):
         character = get_object_or_404(Character, pk=pk)
         if character.user != self.request.user:
-            raise PermissionDenied("본인이 생성한 캐릭터만 수정,삭제할 수 있습니다.")
+            raise PermissionDenied("본인이 생성한 캐릭터만 조회, 수정, 삭제할 수 있습니다.")
         return character
 
     def get(self, request, pk):
         character = self.get_object(pk)
-        serializer = CharacterSerializer(character)
+        serializer = CharacterSerializer(character, context={"request": request})
         return Response(serializer.data)
 
     def put(self, request, pk):
         character = self.get_object(pk)
-        serializer = CharacterSerializer(character, data=request.data, partial=True)
+        serializer = CharacterSerializer(
+            character, data=request.data, partial=True, context={"request": request}
+        )
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)

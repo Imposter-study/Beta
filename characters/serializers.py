@@ -49,7 +49,3 @@ class CharacterDetailSerializer(CharacterBaseSerializer):
             "is_description_public",
             "is_example_public",
         ]
-
-    # super(a, obj) 하면 a의 바로 위 클래스의 메서드를 호출 
-    def to_representation(self, instance):
-        return super(serializers.ModelSerializer, self).to_representation(instance)

@@ -2,7 +2,7 @@ from django.db.models import Prefetch
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import (
     extend_schema,
     OpenApiResponse,
@@ -13,7 +13,7 @@ from .services import ChatService
 
 
 class ChatRoomView(APIView):
-    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
     @extend_schema(
         summary="메시지 전송",
@@ -60,15 +60,15 @@ class ChatRoomView(APIView):
 
 
 class RoomListView(APIView):
-    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        summary="채팅방 조회",
+        summary="채팅방 리스트 조회",
         description="현재 로그인 한 사용자의 채팅방의 목록을 조회합니다.",
         responses={
             200: RoomSerializer(many=True),
             400: OpenApiResponse(description="잘못된 요청"),
-            401: OpenApiResponse(description="로그인 필요"),
+            401: OpenApiResponse(description="인증 필요"),
         },
     )
     def get(self, request):
@@ -90,7 +90,7 @@ class RoomListView(APIView):
 
 
 class RoomDetailView(APIView):
-    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
     @extend_schema(
         summary="채팅방 상세 조회",

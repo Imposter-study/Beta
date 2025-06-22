@@ -5,13 +5,15 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.shortcuts import get_object_or_404
+from django.http import Http404
 from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
     OpenApiResponse,
+    OpenApiParameter
 )
 from .models import Character
-from .serializers import CharacterSerializer
+from .serializers import CharacterDetailSerializer, CharacterBaseSerializer
 
 
 @extend_schema_view(
@@ -19,15 +21,15 @@ from .serializers import CharacterSerializer
         summary="캐릭터 조회",
         description="캐릭터를 조회합니다.",
         responses={
-            200: CharacterSerializer,
+            200: CharacterBaseSerializer,
         },
     ),
     post=extend_schema(
         summary="캐릭터 생성",
         description="캐릭터를 생성합니다.",
-        request=CharacterSerializer,
+        request=CharacterDetailSerializer,
         responses={
-            201: CharacterSerializer,
+            201: CharacterDetailSerializer,
             400: OpenApiResponse(description="잘못된 요청입니다."),
             401: OpenApiResponse(description="로그인이 필요합니다."),
         },
@@ -44,11 +46,11 @@ class CharacterAPIView(APIView):
 
     def get(self, request):
         characters = Character.objects.filter(is_character_public=True)
-        serializer = CharacterSerializer(characters, many=True)
+        serializer = CharacterBaseSerializer(characters, many=True)
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = CharacterSerializer(data=request.data)
+        serializer = CharacterDetailSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -60,7 +62,7 @@ class CharacterAPIView(APIView):
         summary="특정 캐릭터 조회",
         description="PK 값으로 특정 캐릭터를 조회합니다",
         responses={
-            200: CharacterSerializer,
+            200: CharacterDetailSerializer,
             401: OpenApiResponse(description="로그인이 필요합니다."),
             403: OpenApiResponse(description="접근 권한이 없습니다."),
             404: OpenApiResponse(description="캐릭터를 찾을 수 없습니다."),
@@ -69,9 +71,9 @@ class CharacterAPIView(APIView):
     put=extend_schema(
         summary="캐릭터 수정",
         description="PK 값으로 특정 캐릭터를 수정합니다",
-        request=CharacterSerializer,
+        request=CharacterDetailSerializer,
         responses={
-            200: CharacterSerializer,
+            200: CharacterDetailSerializer,
             400: OpenApiResponse(description="잘못된 요청입니다."),
             401: OpenApiResponse(description="로그인이 필요합니다."),
             403: OpenApiResponse(description="접근 권한이 없습니다."),
@@ -101,12 +103,12 @@ class CharacterDetailAPIView(APIView):
 
     def get(self, request, pk):
         character = self.get_object(pk)
-        serializer = CharacterSerializer(character, context={"request": request})
+        serializer = CharacterDetailSerializer(character, context={"request": request})
         return Response(serializer.data)
 
     def put(self, request, pk):
         character = self.get_object(pk)
-        serializer = CharacterSerializer(
+        serializer = CharacterDetailSerializer(
             character, data=request.data, partial=True, context={"request": request}
         )
         if serializer.is_valid():
@@ -118,3 +120,34 @@ class CharacterDetailAPIView(APIView):
         character = self.get_object(pk)
         character.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# __icontains 특정 문자열이 포함 필터 (대소문자 구분x), __contains: 대소문자구별 문자포함
+class CharacterSearchAPIView(APIView):
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name='name',
+                type=str,
+                location='query',
+                description='검색할 캐릭터 이름 일부 문자열 (대소문자 구분 없이 포함 검색)',
+                required=True,
+            ),
+        ],
+        responses={
+            200: CharacterBaseSerializer(many=True),
+            404: OpenApiResponse(description="해당 이름의 캐릭터가 없습니다."),
+        },
+        description="이름 일부 문자열 포함하는 공개 캐릭터 목록 조회",
+        tags=['Character'],
+    )
+    def get(self, request):
+        name = request.query_params.get('name', '')
+        if len(name) < 1:
+            return Response({"message":"한글 이상 검색어로 입력해주세요"}, status=status.HTTP_400_BAD_REQUEST)
+
+        characters = Character.objects.filter(name__icontains=name, is_character_public=True)
+        if not characters.exists():
+            raise Http404("해당 이름의 캐릭터가 없습니다.")
+        serializer = CharacterBaseSerializer(characters, many=True, context={"request": request})
+        return Response(serializer.data)

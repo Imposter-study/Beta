@@ -47,8 +47,8 @@ class RoomSerializer(serializers.ModelSerializer):
 
 
 class ChatRequestSerializer(serializers.Serializer):
-    character_id = serializers.CharField(max_length=50, help_text="챗봇 ID")
-    message = serializers.CharField(max_length=1000, help_text="사용자 메시지")
+    character_id = serializers.CharField(max_length=50)
+    message = serializers.CharField(max_length=1000)
 
 
 class ChatResponseSerializer(serializers.Serializer):

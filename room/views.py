@@ -117,7 +117,6 @@ class RoomDetailView(APIView):
             "room_id": room.room_id,
             "user_id": room.user.id,
             "character_id": room.character_id,
-            "title": room.title,
             "created_at": room.created_at,
             "updated_at": room.updated_at,
             "chats": [

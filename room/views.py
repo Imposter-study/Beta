@@ -115,15 +115,17 @@ class RoomDetailView(APIView):
 
         response_data = {
             "room_id": room.room_id,
-            "user_id": room.user.id,
-            "character_id": room.character_id,
+            "character_title": room.character_id.title,
             "created_at": room.created_at,
             "updated_at": room.updated_at,
             "chats": [
                 {
-                    "chat_id": chat.chat_id,
                     "content": chat.content,
-                    "role": chat.role,
+                    "name": (
+                        room.character_id.name
+                        if chat.role == "ai"
+                        else room.user.username
+                    ),
                     "created_at": chat.created_at,
                 }
                 for chat in chats

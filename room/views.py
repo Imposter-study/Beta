@@ -8,7 +8,7 @@ from drf_spectacular.utils import (
     OpenApiResponse,
 )
 from .models import Room, Chat
-from .serializers import ChatRequestSerializer, RoomSerializer
+from .serializers import ChatRequestSerializer, RoomSerializer, RoomDetailSerializer
 from .services import ChatService
 
 
@@ -116,25 +116,6 @@ class RoomDetailView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        chats = Chat.objects.filter(room=room).order_by("created_at")
+        serializer = RoomDetailSerializer(room)
 
-        response_data = {
-            "room_id": room.room_id,
-            "character_title": room.character_id.title,
-            "created_at": room.created_at,
-            "updated_at": room.updated_at,
-            "chats": [
-                {
-                    "content": chat.content,
-                    "name": (
-                        room.character_id.name
-                        if chat.role == "ai"
-                        else room.user.username
-                    ),
-                    "created_at": chat.created_at,
-                }
-                for chat in chats
-            ],
-        }
-
-        return Response(response_data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)

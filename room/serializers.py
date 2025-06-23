@@ -2,11 +2,9 @@ from rest_framework import serializers
 from .models import Room, Chat
 
 
-class ChatSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Chat
-        fields = ["chat_id", "content", "role", "created_at", "updated_at"]
-        read_only_fields = ["chat_id", "created_at", "updated_at"]
+class ChatRequestSerializer(serializers.Serializer):
+    character_id = serializers.CharField(max_length=50)
+    message = serializers.CharField(max_length=1000)
 
 
 class RoomSerializer(serializers.ModelSerializer):
@@ -46,14 +44,26 @@ class RoomSerializer(serializers.ModelSerializer):
         return "대화를 시작해보세요!"
 
 
-class ChatRequestSerializer(serializers.Serializer):
-    character_id = serializers.CharField(max_length=50)
-    message = serializers.CharField(max_length=1000)
+class ChatDetailSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Chat
+        fields = ["content", "name", "created_at"]
+
+    def get_name(self, obj):
+        room = obj.room
+        return room.character_id.name if obj.role == "ai" else room.user.username
 
 
-class ChatResponseSerializer(serializers.Serializer):
-    room_id = serializers.IntegerField()
-    character_id = serializers.CharField()
-    user_message = serializers.CharField()
-    ai_response = serializers.CharField()
-    created_at = serializers.DateTimeField()
+class RoomDetailSerializer(serializers.ModelSerializer):
+    character_title = serializers.CharField(source="character_id.title", read_only=True)
+    chats = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Room
+        fields = ["room_id", "character_title", "created_at", "updated_at", "chats"]
+
+    def get_chats(self, obj):
+        chats = Chat.objects.filter(room=obj).order_by("created_at")
+        return ChatDetailSerializer(chats, many=True).data

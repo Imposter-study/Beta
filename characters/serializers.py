@@ -4,11 +4,11 @@ from .models import Character
 
 class CharacterBaseSerializer(serializers.ModelSerializer):
     intro = serializers.ListField(
-        child=serializers.CharField(max_length=250, allow_blank=True),
+        child=serializers.DictField(),
         allow_empty=False,
     )
     example_situation = serializers.ListField(
-        child=serializers.CharField(max_length=250, allow_blank=True),
+        child=serializers.DictField(),
         allow_empty=True,
         required=False,
     )

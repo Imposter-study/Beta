@@ -60,6 +60,47 @@ class ChatRoomView(APIView):
 
         return Response(response_data, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        summary="메시지 수정",
+        description="가장 최근 대화를 수정하는 기능입니다.",
+        request=ChatRequestSerializer,
+        responses={
+            200: ChatRequestSerializer,
+            400: OpenApiResponse(description="잘못된 요청"),
+            401: OpenApiResponse(description="인증되지 않은 사용자"),
+            404: OpenApiResponse(description="존재하지 않는 채팅방"),
+        },
+    )
+    def put(self, request):
+        serializer = ChatRequestSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        character_id = serializer.validated_data["character_id"]
+        update_message = serializer.validated_data["message"]
+
+        room = get_object_or_404(
+            Room.objects.select_related("character_id").prefetch_related("chats"),
+            character_id=character_id,
+            user=request.user,
+        )
+
+        last_chat = room.chats.order_by("-created_at").first()
+
+        if not last_chat:
+            return Response(
+                {"error": "존재하지 않는 채팅방입니다."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        last_chat.content = update_message
+        last_chat.save()
+
+        return Response(
+            {"message": "메시지가 수정되었습니다."}, status=status.HTTP_200_OK
+        )
+
 
 class RoomListView(APIView):
     permission_classes = [IsAuthenticated]

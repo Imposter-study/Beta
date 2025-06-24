@@ -119,3 +119,32 @@ class RoomDetailView(APIView):
         serializer = RoomDetailSerializer(room)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        summary="채팅방 상세 조회",
+        description="로그인한 사용자가 채팅방에서 나눈 대화 내역을 출력합니다.",
+        responses={
+            204: OpenApiResponse(description="채팅방 삭제 성공"),
+            401: OpenApiResponse(description="인증되지 않은 사용자"),
+            403: OpenApiResponse(description="접근 권한이 없음"),
+            404: OpenApiResponse(description="존재하지 않는 채팅방"),
+        },
+    )
+    def delete(self, request, room_id):
+        try:
+            room = Room.objects.get(room_id=room_id)
+        except Room.DoesNotExist:
+            return Response(
+                {"error": "존재하지 않는 채팅방입니다."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if room.user != request.user:
+            return Response(
+                {"error": "해당 채팅방에 대한 접근 권한이 없습니다."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        room.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

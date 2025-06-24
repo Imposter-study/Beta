@@ -195,6 +195,14 @@ class CharacterScrapAPIView(APIView):
             return Response({"detail": "스크랩 완료!"}, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    summary="내가 스크랩한 캐릭터 목록 조회",
+    description="로그인 사용자가 스크랩한 캐릭터들 중 공개된 캐릭터 조회.",
+    responses={
+        200: CharacterBaseSerializer(many=True),
+        401: OpenApiResponse(description="로그인이 필요합니다."),
+    },
+)
 # 내가 스크랩(팔로우한 캐릭터 조회)
 class MyCharactersAPIView(APIView):
     permission_classes = [IsAuthenticated]

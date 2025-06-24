@@ -4,7 +4,7 @@ from . import views
 urlpatterns = [
     path("", views.CharacterAPIView.as_view()),
     path("<int:pk>/", views.CharacterDetailAPIView.as_view()),
-    path('characters/search/', views.CharacterSearchAPIView.as_view()),
-    path('characters/scrap/<int:character_id>/', views.CharacterScrapAPIView.as_view()),
-    path("characters/myCharacters/", views.MyCharactersAPIView.as_view()),
+    path('search/', views.CharacterSearchAPIView.as_view()),
+    path('scrap/<int:character_id>/', views.CharacterScrapAPIView.as_view()),
+    path("myCharacters/", views.MyCharactersAPIView.as_view()),
 ]

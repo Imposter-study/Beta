@@ -1,5 +1,5 @@
 # 워커 수
-workers = 1  
+workers = 1
 
 # 워커 타입: 기본 sync (메모리 절약)
 worker_class = "sync"

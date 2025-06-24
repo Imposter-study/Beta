@@ -1,5 +1,7 @@
 from django.db.models import Prefetch
+from django.shortcuts import get_object_or_404
 from rest_framework import status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -58,6 +60,47 @@ class ChatRoomView(APIView):
 
         return Response(response_data, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        summary="메시지 수정",
+        description="가장 최근 대화를 수정하는 기능입니다.",
+        request=ChatRequestSerializer,
+        responses={
+            200: ChatRequestSerializer,
+            400: OpenApiResponse(description="잘못된 요청"),
+            401: OpenApiResponse(description="인증되지 않은 사용자"),
+            404: OpenApiResponse(description="존재하지 않는 채팅방"),
+        },
+    )
+    def put(self, request):
+        serializer = ChatRequestSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        character_id = serializer.validated_data["character_id"]
+        update_message = serializer.validated_data["message"]
+
+        room = get_object_or_404(
+            Room.objects.select_related("character_id").prefetch_related("chats"),
+            character_id=character_id,
+            user=request.user,
+        )
+
+        last_chat = room.chats.order_by("-created_at").first()
+
+        if not last_chat:
+            return Response(
+                {"error": "존재하지 않는 채팅방입니다."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        last_chat.content = update_message
+        last_chat.save()
+
+        return Response(
+            {"message": "메시지가 수정되었습니다."}, status=status.HTTP_200_OK
+        )
+
 
 class RoomListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -91,6 +134,15 @@ class RoomListView(APIView):
 class RoomDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
+    def get_room(self, room_id, user):
+        """채팅방을 조회하고 권한을 확인합니다."""
+        room = get_object_or_404(Room, room_id=room_id)
+
+        if room.user != user:
+            raise PermissionDenied("해당 채팅방에 대한 접근 권한이 없습니다.")
+
+        return room
+
     @extend_schema(
         summary="채팅방 상세 조회",
         description="로그인한 사용자가 채팅방에서 나눈 대화 내역을 출력합니다.",
@@ -102,20 +154,25 @@ class RoomDetailView(APIView):
         },
     )
     def get(self, request, room_id):
-        try:
-            room = Room.objects.get(room_id=room_id)
-        except Room.DoesNotExist:
-            return Response(
-                {"error": "존재하지 않는 채팅방입니다."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        if room.user != request.user:
-            return Response(
-                {"error": "해당 채팅방에 대한 접근 권한이 없습니다."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        room = self.get_room(room_id, request.user)
 
         serializer = RoomDetailSerializer(room)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        summary="채팅방 삭제",
+        description="로그인한 사용자가 채팅방에서 나눈 대화 내역을 출력합니다.",
+        responses={
+            204: OpenApiResponse(description="채팅방 삭제 성공"),
+            401: OpenApiResponse(description="인증되지 않은 사용자"),
+            403: OpenApiResponse(description="접근 권한이 없음"),
+            404: OpenApiResponse(description="존재하지 않는 채팅방"),
+        },
+    )
+    def delete(self, request, room_id):
+        room = self.get_room(room_id, request.user)
+
+        room.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

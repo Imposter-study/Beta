@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import ArrayField
+from django.conf import settings
 
 User = get_user_model()
 
@@ -48,6 +49,13 @@ class Character(models.Model):
     is_character_public = models.BooleanField(default=True)
     is_description_public = models.BooleanField(default=True)
     is_example_public = models.BooleanField(default=True)
+
+    # 캐릭터 스크랩(팔로우)
+    scrapped_by = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name="scrapped_characters",
+        blank=True,
+    )
 
     def __str__(self):
         return f"{self.title} ({self.name})"

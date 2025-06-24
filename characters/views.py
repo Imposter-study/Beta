@@ -162,3 +162,30 @@ class CharacterSearchAPIView(APIView):
             characters, many=True, context={"request": request}
         )
         return Response(serializer.data)
+
+
+@extend_schema_view(
+    post=extend_schema(
+        summary="캐릭터 스크랩(팔로우)",
+        description="로그인한 사용자가 특정 캐릭터 스크랩(팔로우, 언팔) 토글",
+        responses={
+            200: OpenApiResponse(description="스크랩 완료 또는 취소"),
+            401: OpenApiResponse(description="인증이 필요합니다."),
+            404: OpenApiResponse(description="해당 캐릭터를 찾을 수 없습니다."),
+        },
+    ),
+)
+# 캐릭터 스크랩(팔로우)
+class CharacterScrapAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, character_id):
+        character = get_object_or_404(Character, pk=character_id)
+        user = request.user
+
+        if user in character.scrapped_by.all():
+            character.scrapped_by.remove(user)
+            return Response({"detail": "스크랩 취소!"}, status=status.HTTP_200_OK)
+        else:
+            character.scrapped_by.add(user)
+            return Response({"detail": "스크랩 완료!"}, status=status.HTTP_200_OK)

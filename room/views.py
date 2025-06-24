@@ -2,18 +2,18 @@ from django.db.models import Prefetch
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import (
     extend_schema,
     OpenApiResponse,
 )
 from .models import Room, Chat
-from .serializers import ChatRequestSerializer, RoomSerializer
+from .serializers import ChatRequestSerializer, RoomSerializer, RoomDetailSerializer
 from .services import ChatService
 
 
 class ChatRoomView(APIView):
-    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
     @extend_schema(
         summary="메시지 전송",
@@ -25,7 +25,7 @@ class ChatRoomView(APIView):
         responses={
             200: ChatRequestSerializer,
             400: OpenApiResponse(description="잘못된 요청"),
-            401: OpenApiResponse(description="로그인 필요"),
+            401: OpenApiResponse(description="인증되지 않은 사용자"),
         },
     )
     def post(self, request):
@@ -60,15 +60,14 @@ class ChatRoomView(APIView):
 
 
 class RoomListView(APIView):
-    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        summary="채팅방 조회",
+        summary="채팅방 리스트 조회",
         description="현재 로그인 한 사용자의 채팅방의 목록을 조회합니다.",
         responses={
             200: RoomSerializer(many=True),
-            400: OpenApiResponse(description="잘못된 요청"),
-            401: OpenApiResponse(description="로그인 필요"),
+            401: OpenApiResponse(description="인증되지 않은 사용자"),
         },
     )
     def get(self, request):
@@ -90,45 +89,33 @@ class RoomListView(APIView):
 
 
 class RoomDetailView(APIView):
-    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
     @extend_schema(
         summary="채팅방 상세 조회",
         description="로그인한 사용자가 채팅방에서 나눈 대화 내역을 출력합니다.",
         responses={
-            200: OpenApiResponse(description="채팅 내역 출력"),
-            400: OpenApiResponse(description="잘못된 요청"),
-            401: OpenApiResponse(description="로그인 필요"),
+            200: OpenApiResponse(description="채팅 내역 조회 성공"),
+            401: OpenApiResponse(description="인증되지 않은 사용자"),
+            403: OpenApiResponse(description="접근 권한이 없음"),
             404: OpenApiResponse(description="존재하지 않는 채팅방"),
         },
     )
     def get(self, request, room_id):
         try:
-            room = Room.objects.get(room_id=room_id, user=request.user)
+            room = Room.objects.get(room_id=room_id)
         except Room.DoesNotExist:
             return Response(
-                {"error": "채팅방을 찾을 수 없거나 접근 권한이 없습니다."},
+                {"error": "존재하지 않는 채팅방입니다."},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        chats = Chat.objects.filter(room=room).order_by("created_at")
+        if room.user != request.user:
+            return Response(
+                {"error": "해당 채팅방에 대한 접근 권한이 없습니다."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
-        response_data = {
-            "room_id": room.room_id,
-            "user_id": room.user.id,
-            "character_id": room.character_id,
-            "title": room.title,
-            "created_at": room.created_at,
-            "updated_at": room.updated_at,
-            "chats": [
-                {
-                    "chat_id": chat.chat_id,
-                    "content": chat.content,
-                    "role": chat.role,
-                    "created_at": chat.created_at,
-                }
-                for chat in chats
-            ],
-        }
+        serializer = RoomDetailSerializer(room)
 
-        return Response(response_data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)

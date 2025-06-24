@@ -13,7 +13,11 @@ from drf_spectacular.utils import (
     OpenApiParameter,
 )
 from .models import Character
-from .serializers import CharacterSerializer, CharacterSearchSerializer, CharacterBaseSerializer
+from .serializers import (
+    CharacterSerializer,
+    CharacterSearchSerializer,
+    CharacterBaseSerializer,
+)
 
 
 @extend_schema_view(
@@ -189,3 +193,18 @@ class CharacterScrapAPIView(APIView):
         else:
             character.scrapped_by.add(user)
             return Response({"detail": "스크랩 완료!"}, status=status.HTTP_200_OK)
+
+
+# 내가 스크랩(팔로우한 캐릭터 조회)
+class MyCharactersAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        characters = user.scrapped_characters.filter(is_character_public=True).order_by(
+            "-created_at"
+        )
+        serializer = CharacterBaseSerializer(
+            characters, many=True, context={"request": request}
+        )
+        return Response(serializer.data)

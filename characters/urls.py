@@ -6,4 +6,5 @@ urlpatterns = [
     path("<int:pk>/", views.CharacterDetailAPIView.as_view()),
     path('characters/search/', views.CharacterSearchAPIView.as_view()),
     path('characters/scrap/<int:character_id>/', views.CharacterScrapAPIView.as_view()),
+    path("characters/myCharacters/", views.MyCharactersAPIView.as_view()),
 ]

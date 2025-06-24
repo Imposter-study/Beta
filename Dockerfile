@@ -34,6 +34,7 @@ RUN apt-get update && apt-get install -y \
 
 # builder에서 설치된 패키지와 소스, static 파일만 복사
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /app /app
 
 # 포트 오픈

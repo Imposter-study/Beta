@@ -13,7 +13,7 @@ from drf_spectacular.utils import (
     OpenApiParameter,
 )
 from .models import Character
-from .serializers import CharacterSerializer, CharacterSearchSerializer
+from .serializers import CharacterSerializer, CharacterSearchSerializer, CharacterBaseSerializer
 
 
 @extend_schema_view(
@@ -21,7 +21,7 @@ from .serializers import CharacterSerializer, CharacterSearchSerializer
         summary="캐릭터 조회",
         description="캐릭터를 조회합니다.",
         responses={
-            200: CharacterSerializer,
+            200: CharacterBaseSerializer,
         },
     ),
     post=extend_schema(
@@ -46,7 +46,7 @@ class CharacterAPIView(APIView):
 
     def get(self, request):
         characters = Character.objects.filter(is_character_public=True)
-        serializer = CharacterSerializer(
+        serializer = CharacterBaseSerializer(
             characters, many=True, context={"request": request}
         )
         return Response(serializer.data)

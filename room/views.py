@@ -26,6 +26,7 @@ class ChatRoomView(APIView):
         description="""
     챗봇과 대화를 주고받을 수 있는 기능입니다.
     character에서 캐릭터를 생성하고 캐릭터 id를 입력하여 대화합니다.
+    user_message를 작성하지 않고 요청을 보낼 경우 대화를 이어서 생성합니다.
     """,
         request=ChatRequestSerializer,
         responses={

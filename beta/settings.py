@@ -31,10 +31,20 @@ SECRET_KEY = env("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env("DEBUG")
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = env("ALLOWED_HOSTS").split(",")
 
 # CORS 설정
-CORS_ALLOW_ALL_ORIGINS = True  # 개발 환경에서 모든 도메인 허용 (배포 시에는 특정 도메인만 허용하도록 변경예정)
+CORS_ALLOW_ALL_ORIGINS = env.bool("CORS_ALLOW_ALL_ORIGINS")
+CORS_ALLOW_CREDENTIALS = True  # 쿠키 및 인증 정보 허용
+CORS_ALLOWED_ORIGINS = env("FRONT_DOMAIN").split(",")
+
+
+# CSRF 설정
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_HTTPONLY = False
+CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS").split(",")
+
 
 AUTHENTICATION_BACKENDS = (
     "django.contrib.auth.backends.ModelBackend",

@@ -73,6 +73,7 @@ class ChatRoomView(APIView):
             200: ChatRequestSerializer,
             400: OpenApiResponse(description="잘못된 요청"),
             401: OpenApiResponse(description="인증되지 않은 사용자"),
+            403: OpenApiResponse(description="사용자의 메시지"),
             404: OpenApiResponse(description="존재하지 않는 채팅방"),
         },
     )
@@ -97,6 +98,12 @@ class ChatRoomView(APIView):
             return Response(
                 {"error": "존재하지 않는 채팅방입니다."},
                 status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if last_chat.role == "User":
+            return Response(
+                {"error": "사용자 메시지는 수정할 수 없습니다."},
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         last_chat.content = update_message

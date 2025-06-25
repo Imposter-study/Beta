@@ -111,7 +111,7 @@ class ChatService:
             chain = self.create_conversation_chain(character, memory)
 
             if user_message == None:
-                user_message = "**이전 대화를 이어서 작성하십시오.**"
+                user_message = ""
 
             response = chain.predict(input=user_message)
 

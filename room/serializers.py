@@ -4,11 +4,7 @@ from .models import Room, Chat
 
 class ChatRequestSerializer(serializers.Serializer):
     character_id = serializers.CharField(max_length=50)
-    message = serializers.CharField(max_length=1000)
-
-
-class ChatContinueSerializer(serializers.Serializer):
-    character_id = serializers.CharField(max_length=50)
+    message = serializers.CharField(max_length=1000, allow_blank=True)
 
 
 class RoomSerializer(serializers.ModelSerializer):

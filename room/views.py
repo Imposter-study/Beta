@@ -12,7 +12,6 @@ from drf_spectacular.utils import (
 from .models import Room, Chat
 from .serializers import (
     ChatRequestSerializer,
-    ChatContinueSerializer,
     RoomSerializer,
     RoomDetailSerializer,
 )
@@ -48,9 +47,11 @@ class ChatRoomView(APIView):
 
         room, character = chat_service.get_or_create_room(character_id, request.user.id)
 
-        user_chat_obj = chat_service.save_chat(room, user_message, "user")
-
-        ai_response = chat_service.get_ai_response(room, user_message)
+        if user_message != "":
+            user_chat_obj = chat_service.save_chat(room, user_message, "user")
+            ai_response = chat_service.get_ai_response(room, user_message)
+        else:
+            ai_response = chat_service.get_ai_response(room)
 
         ai_chat_obj = chat_service.save_chat(room, ai_response, "ai")
 
@@ -112,49 +113,6 @@ class ChatRoomView(APIView):
         return Response(
             {"message": "메시지가 수정되었습니다."}, status=status.HTTP_200_OK
         )
-
-
-class ChatContinueView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    @extend_schema(
-        summary="메시지 이어서 작성",
-        description="""
-    현재 대화를 이어서 생성합니다.
-    character에서 캐릭터를 생성하고 캐릭터 id를 입력하여 대화합니다.
-    """,
-        request=ChatContinueSerializer,
-        responses={
-            200: ChatContinueSerializer,
-            400: OpenApiResponse(description="잘못된 요청"),
-            401: OpenApiResponse(description="인증되지 않은 사용자"),
-        },
-    )
-    def post(self, request):
-        serializer = ChatContinueSerializer(data=request.data)
-
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        character_id = serializer.validated_data["character_id"]
-
-        chat_service = ChatService()
-
-        room, character = chat_service.get_or_create_room(character_id, request.user.id)
-
-        ai_response = chat_service.get_ai_response(room)
-
-        ai_chat_obj = chat_service.save_chat(room, ai_response, "ai")
-
-        response_data = {
-            "room_id": room.room_id,
-            "user_id": room.user.id,
-            "character_id": character.name,
-            "ai_response": ai_response,
-            "created_at": ai_chat_obj.created_at,
-        }
-
-        return Response(response_data, status=status.HTTP_200_OK)
 
 
 class RoomListView(APIView):

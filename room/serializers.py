@@ -7,6 +7,10 @@ class ChatRequestSerializer(serializers.Serializer):
     message = serializers.CharField(max_length=1000)
 
 
+class ChatContinueSerializer(serializers.Serializer):
+    character_id = serializers.CharField(max_length=50)
+
+
 class RoomSerializer(serializers.ModelSerializer):
     character_title = serializers.SerializerMethodField()
     character_name = serializers.SerializerMethodField()

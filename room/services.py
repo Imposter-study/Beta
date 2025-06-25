@@ -99,13 +99,19 @@ class ChatService:
 
         return chain
 
-    def get_ai_response(self, room, user_message):
+    def save_chat(self, room, content, role):
+        return Chat.objects.create(room=room, content=content, role=role)
+
+    def get_ai_response(self, room, user_message=None):
         try:
             character = room.character_id
 
             memory = self.create_memory_from_history(room)
 
             chain = self.create_conversation_chain(character, memory)
+
+            if user_message == None:
+                user_message = "**이전 대화를 이어서 작성하십시오.**"
 
             response = chain.predict(input=user_message)
 
@@ -114,6 +120,3 @@ class ChatService:
         except Exception as e:
             logger.error(f"AI 응답 생성 오류: {e}")
             return "죄송합니다. 현재 응답을 생성할 수 없습니다."
-
-    def save_chat(self, room, content, role):
-        return Chat.objects.create(room=room, content=content, role=role)

@@ -2,15 +2,28 @@ from rest_framework import serializers
 from .models import Character
 
 
+class CharacterIntroSerializer(serializers.Serializer):
+    role = serializers.CharField()
+    message = serializers.CharField()
+
+
+class CharacterExSituation(serializers.Serializer):
+    role = serializers.CharField()
+    message = serializers.CharField()
+
+
 class CharacterBaseSerializer(serializers.ModelSerializer):
     intro = serializers.ListField(
-        child=serializers.DictField(),
+        child=CharacterIntroSerializer(),
         allow_empty=False,
     )
     example_situation = serializers.ListField(
-        child=serializers.DictField(),
-        allow_empty=True,
+        child=serializers.ListField(
+            child=CharacterExSituation(),
+            allow_empty=True,
+        ),
         required=False,
+        allow_empty=True,
     )
 
     class Meta:

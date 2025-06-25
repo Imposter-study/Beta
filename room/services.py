@@ -33,7 +33,6 @@ class ChatService:
         room, created = Room.objects.get_or_create(
             user=user,
             character_id=character,
-            defaults={"title": f"{character.name} 채팅방"},
         )
         return room, character
 
@@ -78,7 +77,8 @@ class ChatService:
         prompt += """대화 지침:
         - 위에 명시된 캐릭터의 성격과 특징을 일관되게 유지하세요
         - 자연스럽고 몰입감 있는 대화를 이어가세요
-        - 사용자와 친근하게 소통하되, 캐릭터의 고유한 톤을 잃지 마세요"""
+        - 사용자와 친근하게 소통하되, 캐릭터의 고유한 톤을 잃지 마세요
+        - **로 감싸진 문자는 상황 설명으로 인지하세요"""
 
         return prompt
 

@@ -4,11 +4,20 @@ from django.utils import timezone
 from datetime import timedelta
 import random
 
+
 class User(AbstractUser):
     GENDER_CHOICES = [("M", "남자"), ("F", "여자"), ("O", "기타")]
     WORD_POOL = [
-        "red", "blue", "yellow", "purple", "green",
-        "dog", "bird", "monkey", "tiger", "cow"
+        "red",
+        "blue",
+        "yellow",
+        "purple",
+        "green",
+        "dog",
+        "bird",
+        "monkey",
+        "tiger",
+        "cow",
     ]
 
     username = models.CharField(max_length=20, unique=True)

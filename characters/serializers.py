@@ -3,11 +3,13 @@ from .models import Character
 
 
 class CharacterIntroSerializer(serializers.Serializer):
+    id = serializers.CharField()
     role = serializers.CharField()
     message = serializers.CharField()
 
 
 class CharacterExSituation(serializers.Serializer):
+    id = serializers.CharField()
     role = serializers.CharField()
     message = serializers.CharField()
 

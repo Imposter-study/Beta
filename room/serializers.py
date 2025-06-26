@@ -56,6 +56,10 @@ class ChatDetailSerializer(serializers.ModelSerializer):
         return room.character_id.name if obj.role == "ai" else room.user.username
 
 
+class ChatDeleteSerializer(serializers.Serializer):
+    chat_id = serializers.IntegerField(required=False)
+
+
 class RoomDetailSerializer(serializers.ModelSerializer):
     character_title = serializers.CharField(source="character_id.title", read_only=True)
     chats = serializers.SerializerMethodField()

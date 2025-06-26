@@ -14,6 +14,7 @@ from .serializers import (
     ChatRequestSerializer,
     RoomSerializer,
     RoomDetailSerializer,
+    ChatDeleteSerializer,
 )
 from .services import ChatService
 
@@ -149,7 +150,6 @@ class RoomDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get_room(self, room_id, user):
-        """채팅방을 조회하고 권한을 확인합니다."""
         room = get_object_or_404(Room, room_id=room_id)
 
         if room.user != user:
@@ -175,8 +175,8 @@ class RoomDetailAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
-        summary="채팅방 삭제",
-        description="로그인한 사용자가 채팅방에서 나눈 대화 내역을 출력합니다.",
+        summary="채팅방 나가기",
+        description="채팅방을 삭제합니다.",
         responses={
             204: OpenApiResponse(description="채팅방 삭제 성공"),
             401: OpenApiResponse(description="인증되지 않은 사용자"),
@@ -190,3 +190,43 @@ class RoomDetailAPIView(APIView):
         room.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @extend_schema(
+        summary="대화 내역 삭제",
+        description="채팅방의 대화 내역을 삭제합니다. chat_id를 입력하면 해당 chat_id부터 최신까지 삭제, 입력하지 않으면 모든 대화 삭제",
+        request=ChatDeleteSerializer,
+        responses={
+            200: OpenApiResponse(description="대화 내역 삭제 성공"),
+            400: OpenApiResponse(description="잘못된 요청"),
+            401: OpenApiResponse(description="인증되지 않은 사용자"),
+            403: OpenApiResponse(description="접근 권한이 없음"),
+            404: OpenApiResponse(description="존재하지 않는 채팅방 또는 채팅"),
+        },
+    )
+    def patch(self, request, room_id):
+        room = self.get_room(room_id, request.user)
+
+        serializer = ChatDeleteSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        chat_id = serializer.validated_data.get("chat_id")
+
+        if chat_id:
+            if not Chat.objects.filter(chat_id=chat_id, room=room).exists():
+                return Response(
+                    {"error": "해당 채팅방에 존재하지 않는 chat_id입니다."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            chats_to_delete = Chat.objects.filter(room=room, chat_id__gte=chat_id)
+        else:
+            chats_to_delete = Chat.objects.filter(room=room)
+
+        deleted_count = chats_to_delete.count()
+        chats_to_delete.delete()
+
+        return Response(
+            {"message": "대화 내역이 삭제되었습니다.", "deleted_count": deleted_count},
+            status=status.HTTP_200_OK,
+        )

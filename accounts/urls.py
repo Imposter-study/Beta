@@ -14,12 +14,12 @@ urlpatterns = [
     path("kakao/login/", views.KakaoLogin.as_view(), name="kakao_login"),
     path("google/login/", views.GoogleLogin.as_view(), name="google_login"),
     path(
-        "chat-profiles/",
+        "chat_profiles/",
         views.ChatProfileView.as_view(),
         name="chat_profile_list_create",
     ),
     path(
-        "chat-profiles/<int:pk>/",
+        "chat_profiles/<uuid:chatprofile_id>/",
         views.ChatProfileDetailView.as_view(),
         name="chat_profile_detail",
     ),

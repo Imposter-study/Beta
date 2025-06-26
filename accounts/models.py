@@ -2,8 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from datetime import timedelta
-import random
-
+import random, uuid
 
 class User(AbstractUser):
     GENDER_CHOICES = [("M", "남자"), ("F", "여자"), ("O", "기타")]
@@ -62,6 +61,7 @@ class User(AbstractUser):
 
 
 class ChatProfile(models.Model):
+    chatprofile_id = models.UUIDField(default=uuid.uuid4)
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="chat_profiles"
     )

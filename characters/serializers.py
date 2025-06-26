@@ -61,8 +61,8 @@ class CharacterSerializer(CharacterBaseSerializer):
     is_character_public = serializers.BooleanField()
     is_description_public = serializers.BooleanField()
     is_example_public = serializers.BooleanField()
-    hashtags = HashtagSerializer(many=True)
-    
+    hashtags = HashtagSerializer(many=True, required=False)
+
     class Meta(CharacterBaseSerializer.Meta):
         fields = CharacterBaseSerializer.Meta.fields + [
             "is_character_public",
@@ -86,9 +86,8 @@ class CharacterSerializer(CharacterBaseSerializer):
 
     def create(self, validated_data):
         hashtag_data = validated_data.pop("hashtags", [])
-        user = validated_data.pop("user", None)  # user가 있으면 제거
+        user = validated_data.pop("user", None)
         if user is None:
-            # context에서 user 가져오기 (백업)
             user = self.context["request"].user
 
         character = Character.objects.create(user=user, **validated_data)

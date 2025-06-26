@@ -116,6 +116,20 @@ class ChatAPIView(APIView):
 class ChatRegenerateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="메시지 재생성",
+        description="마지막 사용자 메시지를 기준으로 AI 응답을 재생성합니다.",
+        request=ChatRegenerateSerializer,
+        responses={
+            200: OpenApiResponse(description="AI 응답 재생성 성공"),
+            400: OpenApiResponse(description="잘못된 요청"),
+            401: OpenApiResponse(description="인증되지 않은 사용자"),
+            403: OpenApiResponse(description="접근 권한이 없음"),
+            404: OpenApiResponse(
+                description="존재하지 않는 채팅방 또는 사용자 메시지가 없음"
+            ),
+        },
+    )
     def post(self, request):
         serializer = ChatRegenerateSerializer(data=request.data)
 
@@ -138,24 +152,27 @@ class ChatRegenerateAPIView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        ai_chat_exists = Chat.objects.filter(room=room, role="ai").exists()
+        last_user_message = (
+            Chat.objects.filter(room=room, role="user").order_by("-created_at").first()
+        )
 
-        if not ai_chat_exists:
+        if not last_user_message:
             return Response(
-                {"error": "재생성할 AI 메시지가 없습니다."},
+                {"error": "재생성할 사용자 메시지가 없습니다."},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
         chat_service = ChatService()
-        character = room.character_id
 
-        ai_response = chat_service.get_ai_response(room)
+        ai_response = chat_service.get_ai_response(
+            room, last_user_message.content, last_user_message
+        )
 
         ai_chat_obj = chat_service.save_chat(room, ai_response, "ai")
 
         response_data = {
             "room_id": room.room_id,
-            "character_name": character.name,
+            "character_name": room.character_id.name,
             "regenerated_response": ai_response,
             "created_at": ai_chat_obj.created_at,
         }

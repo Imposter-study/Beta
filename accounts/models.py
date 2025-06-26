@@ -4,11 +4,20 @@ from django.utils import timezone
 from datetime import timedelta
 import random
 
+
 class User(AbstractUser):
     GENDER_CHOICES = [("M", "남자"), ("F", "여자"), ("O", "기타")]
     WORD_POOL = [
-        "red", "blue", "yellow", "purple", "green",
-        "dog", "bird", "monkey", "tiger", "cow"
+        "red",
+        "blue",
+        "yellow",
+        "purple",
+        "green",
+        "dog",
+        "bird",
+        "monkey",
+        "tiger",
+        "cow",
     ]
 
     username = models.CharField(max_length=20, unique=True)
@@ -16,7 +25,7 @@ class User(AbstractUser):
     gender = models.CharField(default="O", choices=GENDER_CHOICES, max_length=1)
     email = models.EmailField(blank=True, null=True, unique=False)
     birth_date = models.DateField(null=True, blank=True)
-    introduce = models.TextField(blank=True, null=True)
+    introduce = models.CharField(max_length=100, blank=True, null=True)
     profile_picture = models.ImageField(
         upload_to="profile_pics/", blank=True, null=True
     )
@@ -50,3 +59,23 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+
+
+class ChatProfile(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="chat_profiles"
+    )
+    chat_nickname = models.CharField(max_length=30)
+    chat_description = models.CharField(max_length=100, blank=True, null=True)
+    chat_profile_picture = models.ImageField(
+        upload_to="chat_profiles/", blank=True, null=True
+    )
+    is_default = models.BooleanField(default=False)  # 기본 대화 프로필 설정
+
+    def save(self, *args, **kwargs):
+        if self.is_default:
+            ChatProfile.objects.filter(user=self.user).update(is_default=False)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.chat_nickname}"

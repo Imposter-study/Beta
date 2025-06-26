@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.permissions import IsAuthenticated
 from django.conf import settings
 import requests
 from allauth.socialaccount.providers.kakao import views as kakao_view
@@ -13,8 +15,7 @@ from allauth.socialaccount.models import SocialAccount
 from django.http import JsonResponse
 from allauth.socialaccount.providers.google import views as google_view
 
-from rest_framework.parsers import MultiPartParser, FormParser
-from .models import User
+from .models import User, ChatProfile
 from .serializers import (
     SignUpSerializer,
     MyProfileSerializer,
@@ -22,6 +23,7 @@ from .serializers import (
     LoginSerializer,
     PasswordChangeSerializer,
     DeactivateAccountSerializer,
+    ChatProfileSerializer,
 )
 from drf_spectacular.utils import (
     extend_schema,
@@ -274,3 +276,64 @@ class GoogleLogin(SocialLoginView):
     )
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
+
+
+# 대화프로필
+@extend_schema(tags=["ChatProfile"])
+class ChatProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+    # parser_classes = [MultiPartParser, FormParser]
+
+    @extend_schema(
+        summary="내 대화 프로필 목록 조회",
+        description="로그인한 사용자의 대화 프로필 목록을 반환합니다.",
+        responses={200: ChatProfileSerializer(many=True)},
+    )
+    def get(self, request):
+        profiles = ChatProfile.objects.filter(user=request.user)
+        serializer = ChatProfileSerializer(profiles, many=True)
+        return Response(serializer.data)
+
+    @extend_schema(
+        summary="새 대화 프로필 생성",
+        description="새로운 대화 프로필을 생성합니다.",
+        request=ChatProfileSerializer,
+        responses={201: ChatProfileSerializer},
+    )
+    def post(self, request):
+        serializer = ChatProfileSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+
+# 기본대화프로필
+@extend_schema(tags=["ChatProfile"])
+class ChatProfileDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    # parser_classes = [MultiPartParser, FormParser]
+
+    @extend_schema(
+        summary="대화 프로필 수정",
+        description="특정 pk의 대화 프로필을 수정합니다.",
+        request=ChatProfileSerializer,
+        responses={200: ChatProfileSerializer},
+    )
+    def put(self, request, pk):
+        profile = get_object_or_404(ChatProfile, pk=pk, user=request.user)
+        serializer = ChatProfileSerializer(profile, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+    @extend_schema(
+        summary="대화 프로필 삭제",
+        description="특정 pk의 대화 프로필을 삭제합니다.",
+        responses={204: None},
+    )
+    def delete(self, request, pk):
+        profile = get_object_or_404(ChatProfile, pk=pk, user=request.user)
+        profile.delete()
+        return Response(status=204)

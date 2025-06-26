@@ -10,7 +10,11 @@ from drf_spectacular.utils import (
     OpenApiResponse,
 )
 from .models import Room, Chat
-from .serializers import ChatRequestSerializer, RoomSerializer, RoomDetailSerializer
+from .serializers import (
+    ChatRequestSerializer,
+    RoomSerializer,
+    RoomDetailSerializer,
+)
 from .services import ChatService
 
 
@@ -22,6 +26,7 @@ class ChatRoomView(APIView):
         description="""
     챗봇과 대화를 주고받을 수 있는 기능입니다.
     character에서 캐릭터를 생성하고 캐릭터 id를 입력하여 대화합니다.
+    user_message를 작성하지 않고 요청을 보낼 경우 대화를 이어서 생성합니다.
     """,
         request=ChatRequestSerializer,
         responses={
@@ -43,9 +48,11 @@ class ChatRoomView(APIView):
 
         room, character = chat_service.get_or_create_room(character_id, request.user.id)
 
-        user_chat_obj = chat_service.save_chat(room, user_message, "user")
-
-        ai_response = chat_service.get_ai_response(room, user_message)
+        if user_message != "":
+            user_chat_obj = chat_service.save_chat(room, user_message, "user")
+            ai_response = chat_service.get_ai_response(room, user_message)
+        else:
+            ai_response = chat_service.get_ai_response(room)
 
         ai_chat_obj = chat_service.save_chat(room, ai_response, "ai")
 
@@ -68,6 +75,7 @@ class ChatRoomView(APIView):
             200: ChatRequestSerializer,
             400: OpenApiResponse(description="잘못된 요청"),
             401: OpenApiResponse(description="인증되지 않은 사용자"),
+            403: OpenApiResponse(description="사용자의 메시지"),
             404: OpenApiResponse(description="존재하지 않는 채팅방"),
         },
     )
@@ -92,6 +100,12 @@ class ChatRoomView(APIView):
             return Response(
                 {"error": "존재하지 않는 채팅방입니다."},
                 status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if last_chat.role == "User":
+            return Response(
+                {"error": "사용자 메시지는 수정할 수 없습니다."},
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         last_chat.content = update_message

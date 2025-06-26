@@ -18,7 +18,7 @@ from .serializers import (
 from .services import ChatService
 
 
-class ChatRoomView(APIView):
+class ChatAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
@@ -116,7 +116,7 @@ class ChatRoomView(APIView):
         )
 
 
-class RoomListView(APIView):
+class RoomAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
@@ -144,23 +144,8 @@ class RoomListView(APIView):
         serializer = RoomSerializer(rooms, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @extend_schema(
-        summary="채팅방 나가기",
-        description="생성된 채팅방을 삭제합니다.",
-        responses={
-            204: OpenApiResponse(description="채팅방 삭제 성공"),
-            401: OpenApiResponse(description="인증되지 않은 사용자"),
-            403: OpenApiResponse(description="접근 권한이 없음"),
-            404: OpenApiResponse(description="존재하지 않는 채팅방"),
-        },
-    )
-    def delete(self, request):
-        serializer = ChatRequestSerializer(data=request.data)
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class RoomDetailView(APIView):
+class RoomDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get_room(self, room_id, user):
@@ -188,3 +173,20 @@ class RoomDetailView(APIView):
         serializer = RoomDetailSerializer(room)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        summary="채팅방 삭제",
+        description="로그인한 사용자가 채팅방에서 나눈 대화 내역을 출력합니다.",
+        responses={
+            204: OpenApiResponse(description="채팅방 삭제 성공"),
+            401: OpenApiResponse(description="인증되지 않은 사용자"),
+            403: OpenApiResponse(description="접근 권한이 없음"),
+            404: OpenApiResponse(description="존재하지 않는 채팅방"),
+        },
+    )
+    def delete(self, request, room_id):
+        room = self.get_room(room_id, request.user)
+
+        room.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

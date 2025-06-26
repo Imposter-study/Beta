@@ -59,6 +59,7 @@ class ChatService:
     def get_system_prompt(self, character):
         prompt = f"당신은 '{character.name}'입니다.\n"
         prompt += f"제목: {character.title}\n"
+
         if character.intro:
             intro_messages = [item.get("message", "") for item in character.intro]
             intro_text = " ".join(intro_messages)

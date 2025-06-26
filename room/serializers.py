@@ -12,6 +12,10 @@ class ChatUpdateSerializer(serializers.Serializer):
     message = serializers.CharField(max_length=1000)
 
 
+class ChatRegenerateSerializer(serializers.Serializer):
+    room_id = serializers.UUIDField()
+
+
 class RoomSerializer(serializers.ModelSerializer):
     character_title = serializers.SerializerMethodField()
     character_name = serializers.SerializerMethodField()

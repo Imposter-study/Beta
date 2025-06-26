@@ -13,6 +13,7 @@ from .models import Room, Chat
 from .serializers import (
     ChatRequestSerializer,
     ChatUpdateSerializer,
+    ChatRegenerateSerializer,
     RoomSerializer,
     RoomDetailSerializer,
     ChatDeleteSerializer,
@@ -110,6 +111,56 @@ class ChatAPIView(APIView):
         return Response(
             {"message": "메시지가 수정되었습니다."}, status=status.HTTP_200_OK
         )
+
+
+class ChatRegenerateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChatRegenerateSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        room_id = serializer.validated_data["room_id"]
+
+        try:
+            room = Room.objects.get(room_id=room_id)
+        except Room.DoesNotExist:
+            return Response(
+                {"error": "존재하지 않는 채팅방입니다."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if room.user != request.user:
+            return Response(
+                {"error": "해당 채팅방에 대한 접근 권한이 없습니다."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        ai_chat_exists = Chat.objects.filter(room=room, role="ai").exists()
+
+        if not ai_chat_exists:
+            return Response(
+                {"error": "재생성할 AI 메시지가 없습니다."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        chat_service = ChatService()
+        character = room.character_id
+
+        ai_response = chat_service.get_ai_response(room)
+
+        ai_chat_obj = chat_service.save_chat(room, ai_response, "ai")
+
+        response_data = {
+            "room_id": room.room_id,
+            "character_name": character.name,
+            "regenerated_response": ai_response,
+            "created_at": ai_chat_obj.created_at,
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
 
 
 class RoomAPIView(APIView):

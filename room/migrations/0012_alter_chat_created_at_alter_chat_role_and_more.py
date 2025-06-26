@@ -8,28 +8,34 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('room', '0011_remove_room_title'),
+        ("room", "0011_remove_room_title"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='chat',
-            name='created_at',
+            model_name="chat",
+            name="created_at",
             field=models.DateTimeField(default=django.utils.timezone.now),
         ),
         migrations.AlterField(
-            model_name='chat',
-            name='role',
-            field=models.CharField(choices=[('user', 'User'), ('ai', 'AI')], max_length=10),
+            model_name="chat",
+            name="role",
+            field=models.CharField(
+                choices=[("user", "User"), ("ai", "AI")], max_length=10
+            ),
         ),
         migrations.AlterField(
-            model_name='chat',
-            name='room',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='chats', to='room.room'),
+            model_name="chat",
+            name="room",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="chats",
+                to="room.room",
+            ),
         ),
         migrations.AlterField(
-            model_name='chat',
-            name='updated_at',
+            model_name="chat",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True),
         ),
     ]

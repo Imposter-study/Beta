@@ -4,8 +4,8 @@ from .models import Room, Chat
 from accounts.models import User
 from characters.models import Character
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain.chains import LLMChain
 from langchain.memory import ConversationBufferWindowMemory
-from langchain.chains import ConversationChain
 from langchain.prompts import (
     ChatPromptTemplate,
     MessagesPlaceholder,
@@ -59,7 +59,10 @@ class ChatService:
     def get_system_prompt(self, character):
         prompt = f"당신은 '{character.name}'입니다.\n"
         prompt += f"제목: {character.title}\n"
-        prompt += f"소개: {character.intro}\n\n"
+        if character.intro:
+            intro_messages = [item.get("message", "") for item in character.intro]
+            intro_text = " ".join(intro_messages)
+            prompt += f"소개: {intro_text}\n\n"
 
         if character.description:
             prompt += f"상세 설명: {character.description}\n\n"
@@ -93,7 +96,7 @@ class ChatService:
             ]
         )
 
-        chain = ConversationChain(
+        chain = LLMChain(
             llm=self.llm, prompt=prompt, memory=memory, verbose=settings.VERBOSE
         )
 

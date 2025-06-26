@@ -27,12 +27,13 @@ class Chat(models.Model):
     ]
 
     chat_id = models.AutoField(primary_key=True)
-    room = models.ForeignKey(
-        Room, on_delete=models.CASCADE, related_name="chats")
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="chats")
     content = models.TextField(verbose_name="메시지 내용")
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
     created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(auto_now=True,)
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
 
     class Meta:
         ordering = ["created_at"]

@@ -12,6 +12,7 @@ from drf_spectacular.utils import (
 from .models import Room, Chat
 from .serializers import (
     ChatRequestSerializer,
+    ChatUpdateSerializer,
     RoomSerializer,
     RoomDetailSerializer,
     ChatDeleteSerializer,
@@ -70,47 +71,41 @@ class ChatAPIView(APIView):
 
     @extend_schema(
         summary="메시지 수정",
-        description="가장 최근 대화를 수정하는 기능입니다.",
-        request=ChatRequestSerializer,
+        description="chat_id를 입력받아 해당 메시지를 수정합니다.",
+        request=ChatUpdateSerializer,
         responses={
-            200: ChatRequestSerializer,
+            200: ChatUpdateSerializer,
             400: OpenApiResponse(description="잘못된 요청"),
             401: OpenApiResponse(description="인증되지 않은 사용자"),
-            403: OpenApiResponse(description="사용자의 메시지"),
-            404: OpenApiResponse(description="존재하지 않는 채팅방"),
+            403: OpenApiResponse(description="사용자의 메시지, 접근 권한 없음"),
+            404: OpenApiResponse(description="존재하지 않는 채팅"),
         },
     )
     def put(self, request):
-        serializer = ChatRequestSerializer(data=request.data)
+        serializer = ChatUpdateSerializer(data=request.data)
 
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        character_id = serializer.validated_data["character_id"]
+        chat_id = serializer.validated_data["chat_id"]
         update_message = serializer.validated_data["message"]
 
-        room = get_object_or_404(
-            Room.objects.select_related("character_id").prefetch_related("chats"),
-            character_id=character_id,
-            user=request.user,
-        )
+        chat = get_object_or_404(Chat, chat_id=chat_id)
 
-        last_chat = room.chats.order_by("-created_at").first()
-
-        if not last_chat:
+        if chat.room.user != request.user:
             return Response(
-                {"error": "존재하지 않는 채팅방입니다."},
-                status=status.HTTP_404_NOT_FOUND,
+                {"error": "해당 채팅방에 대한 접근 권한이 없습니다."},
+                status=status.HTTP_403_FORBIDDEN,
             )
 
-        if last_chat.role == "User":
+        if chat.role == "user":
             return Response(
                 {"error": "사용자 메시지는 수정할 수 없습니다."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        last_chat.content = update_message
-        last_chat.save()
+        chat.content = update_message
+        chat.save()
 
         return Response(
             {"message": "메시지가 수정되었습니다."}, status=status.HTTP_200_OK
@@ -207,6 +202,7 @@ class RoomDetailAPIView(APIView):
         room = self.get_room(room_id, request.user)
 
         serializer = ChatDeleteSerializer(data=request.data)
+
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -215,11 +211,11 @@ class RoomDetailAPIView(APIView):
         if chat_id:
             if not Chat.objects.filter(chat_id=chat_id, room=room).exists():
                 return Response(
-                    {"error": "해당 채팅방에 존재하지 않는 chat_id입니다."},
+                    {"error": "존재하지 않는 chat_id입니다."},
                     status=status.HTTP_404_NOT_FOUND,
                 )
-
             chats_to_delete = Chat.objects.filter(room=room, chat_id__gte=chat_id)
+
         else:
             chats_to_delete = Chat.objects.filter(room=room)
 
@@ -227,6 +223,6 @@ class RoomDetailAPIView(APIView):
         chats_to_delete.delete()
 
         return Response(
-            {"message": "대화 내역이 삭제되었습니다.", "deleted_count": deleted_count},
+            {"message": "대화 내역 삭제", "deleted_count": deleted_count},
             status=status.HTTP_200_OK,
         )

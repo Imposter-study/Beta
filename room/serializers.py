@@ -80,3 +80,7 @@ class RoomDetailSerializer(serializers.ModelSerializer):
     def get_chats(self, obj):
         chats = Chat.objects.filter(room=obj).order_by("created_at")
         return ChatDetailSerializer(chats, many=True).data
+
+
+class ChatHistorySaveSerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=100)

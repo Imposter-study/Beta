@@ -11,6 +11,7 @@ from drf_spectacular.utils import (
     OpenApiResponse,
 )
 from .models import Room, Chat
+from characters.models import ConversationHistory
 from .serializers import (
     ChatRequestSerializer,
     ChatUpdateSerializer,
@@ -18,6 +19,7 @@ from .serializers import (
     RoomSerializer,
     RoomDetailSerializer,
     ChatDeleteSerializer,
+    ChatHistorySaveSerializer,
 )
 from .services import ChatService
 
@@ -376,38 +378,47 @@ class ChatHistoryAPIView(APIView):
         },
     )
     def post(self, request, room_id):
+        serializer = ChatHistorySaveSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        title = serializer.validated_data["title"]
         room = self.get_room(room_id, request.user)
-
-        character = room.character_id
-        user_id_str = str(request.user.id)
-
-        if user_id_str not in character.conversations:
-            character.conversations[user_id_str] = []
-
         chats = Chat.objects.filter(room=room).order_by("created_at")
 
-        saved_chats_count = 0
+        if not chats.exists():
+            return Response(
+                {"message": "저장할 대화 내역이 없습니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        chat_history = []
         for chat in chats:
-            character.conversations[user_id_str].append(
+            chat_history.append(
                 {
                     "content": chat.content,
                     "role": chat.role,
                     "timestamp": chat.created_at.isoformat(),
                 }
             )
-            saved_chats_count += 1
 
-        character.save()
+        last_message = chats.last().content[:50] if chats.exists() else ""
 
-        chats_to_delete = Chat.objects.filter(room=room)
-        deleted_count = chats_to_delete.count()
-        chats_to_delete.delete()
+        conversation_history = ConversationHistory.objects.create(
+            character=room.character_id,
+            user=request.user,
+            title=title,
+            chat_history=chat_history,
+            last_message=last_message,
+        )
 
         return Response(
             {
-                "message": "대화 내역이 캐릭터에 저장되고 채팅방이 초기화되었습니다.",
-                "saved_chats": saved_chats_count,
-                "deleted_count": deleted_count,
+                "message": "대화 내역이 저장되었습니다.",
+                "history_id": conversation_history.history_id,
+                "title": conversation_history.title,
+                "saved_chats": len(chat_history),
             },
             status=status.HTTP_200_OK,
         )

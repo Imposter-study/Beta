@@ -125,6 +125,7 @@ class ChatService:
             chain = self.create_conversation_chain(character, memory)
 
             if user_message == None:
+                # TODO: 메시지 이어서 생성 프롬프트
                 user_message = ""
 
             response = chain.predict(input=user_message)

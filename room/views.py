@@ -100,6 +100,10 @@ class ChatAPIView(APIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 
+class ChatSuggestionAPIView(APIView):
+    pass
+
+
 class ChatRegenerateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 

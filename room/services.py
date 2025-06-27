@@ -36,7 +36,7 @@ class ChatService:
         )
         return room, character
 
-    def create_memory_from_history(self, room):
+    def create_memory_from_history(self, room, before_datetime=None):
         limit = getattr(settings, "CONVERSATION_HISTORY_LIMIT")
 
         memory = ConversationBufferWindowMemory(
@@ -45,7 +45,11 @@ class ChatService:
             memory_key="chat_history",
         )
 
-        chats = Chat.objects.filter(room=room).order_by("-created_at")[:limit]
+        queryset = Chat.objects.filter(room=room)
+        if before_datetime:
+            queryset = queryset.filter(created_at__lt=before_datetime)
+
+        chats = queryset.order_by("-created_at")[:limit]
         recent_chats = list(reversed(chats))
 
         for chat in recent_chats:
@@ -57,26 +61,7 @@ class ChatService:
         return memory
 
     def recreate_memory_from_history(self, room, last_user_message):
-        limit = getattr(settings, "CONVERSATION_HISTORY_LIMIT")
-
-        memory = ConversationBufferWindowMemory(
-            k=limit,
-            return_messages=True,
-            memory_key="chat_history",
-        )
-
-        chats = Chat.objects.filter(
-            room=room, created_at__lt=last_user_message.created_at
-        ).order_by("-created_at")[:limit]
-        recent_chats = list(reversed(chats))
-
-        for chat in recent_chats:
-            if chat.role == "user":
-                memory.chat_memory.add_user_message(chat.content)
-            elif chat.role == "ai":
-                memory.chat_memory.add_ai_message(chat.content)
-
-        return memory
+        return self.create_memory_from_history(room, last_user_message.created_at)
 
     def get_system_prompt(self, character):
         prompt = f"당신은 '{character.name}'입니다.\n"

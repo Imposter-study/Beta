@@ -135,3 +135,49 @@ class ChatService:
         except Exception as e:
             logger.error(f"AI 응답 생성 오류: {e}")
             return "죄송합니다. 현재 응답을 생성할 수 없습니다."
+
+    def get_chat_suggestion(self, room):
+        character = room.character_id
+        memory = self.create_memory_from_history(room)
+
+        suggestion_system_prompt = f"""당신은 '{character.name}' 캐릭터와 대화하는 사용자를 위한 추천 답변 생성기입니다.
+
+    캐릭터 정보:
+    - 이름: {character.name}
+    - 제목: {character.title}"""
+
+        if character.description:
+            suggestion_system_prompt += f"\n- 설명: {character.description}"
+
+        if character.character_info:
+            suggestion_system_prompt += f"\n- 캐릭터 정보: {character.character_info}"
+
+        suggestion_system_prompt += """
+
+    지침:
+    1. 이전 대화 맥락을 고려하여 자연스럽게 이어질 수 있는 사용자 답변을 제안하세요
+    2. 질문, 공감, 또는 새로운 주제 제안 등 다양한 형태로 구성하세요
+    3. 한 문장으로 간결하게 작성하세요
+
+    이전 대화를 참고하여 사용자가 다음에 할 수 있는 자연스러운 답변 하나를 생성해주세요."""
+
+        suggestion_prompt = ChatPromptTemplate.from_messages(
+            [
+                SystemMessagePromptTemplate.from_template(suggestion_system_prompt),
+                MessagesPlaceholder(variable_name="chat_history"),
+                HumanMessagePromptTemplate.from_template(
+                    "위 대화를 바탕으로 사용자가 할 수 있는 자연스러운 답변을 하나 생성해주세요:"
+                ),
+            ]
+        )
+
+        suggestion_chain = LLMChain(
+            llm=self.llm,
+            prompt=suggestion_prompt,
+            memory=memory,
+            verbose=settings.VERBOSE,
+        )
+
+        suggestion = suggestion_chain.predict(input="")
+
+        return suggestion.strip()

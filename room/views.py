@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -101,7 +102,59 @@ class ChatAPIView(APIView):
 
 
 class ChatSuggestionAPIView(APIView):
-    pass
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="추천 답변 생성",
+        description="이전 대화 내역을 기준으로 사용자가 할 수 있는 추천 답변 3가지를 생성합니다.",
+        request=None,
+        responses={
+            200: OpenApiResponse(description="추천 답변 생성 성공"),
+            400: OpenApiResponse(description="잘못된 요청 또는 대화 내역 없음"),
+            401: OpenApiResponse(description="인증되지 않은 사용자"),
+            403: OpenApiResponse(description="접근 권한이 없음"),
+            404: OpenApiResponse(description="존재하지 않는 채팅방"),
+        },
+    )
+    def post(self, request, room_id):
+        try:
+            room = Room.objects.get(room_id=room_id)
+        except Room.DoesNotExist:
+            return Response(
+                {"error": "존재하지 않는 채팅방입니다."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if room.user != request.user:
+            return Response(
+                {"error": "해당 채팅방에 대한 접근 권한이 없습니다."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        chat_service = ChatService()
+
+        try:
+            memory = chat_service.create_memory_from_history(room)
+            if not memory.chat_memory.messages:
+                return Response(
+                    {"error": "추천 답변을 생성할 대화 내역이 없습니다."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            suggestions = []
+            for _ in range(settings.SUGGESTIONS):
+                suggestion = chat_service.get_chat_suggestion(room)
+                suggestions.append(suggestion)
+
+            response_data = {"suggestions": suggestions}
+
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Exception:
+            return Response(
+                {"error": "추천 답변 생성 중 오류가 발생했습니다."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 class ChatRegenerateAPIView(APIView):

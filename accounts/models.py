@@ -6,6 +6,7 @@ import random, uuid
 from django.conf import settings
 
 
+
 class User(AbstractUser):
     GENDER_CHOICES = [("M", "남자"), ("F", "여자"), ("O", "기타")]
     WORD_POOL = [

@@ -9,7 +9,6 @@ class Room(models.Model):
     room_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     user = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
     character_id = models.ForeignKey(Character, on_delete=models.CASCADE, default=1)
-    title = models.CharField(max_length=200)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -28,13 +27,13 @@ class Chat(models.Model):
     ]
 
     chat_id = models.AutoField(primary_key=True)
-    room = models.ForeignKey(
-        Room, on_delete=models.CASCADE, related_name="chats", verbose_name="채팅방"
-    )
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="chats")
     content = models.TextField(verbose_name="메시지 내용")
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, verbose_name="역할")
-    created_at = models.DateTimeField(default=timezone.now, verbose_name="생성시간")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="수정시간")
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
 
     class Meta:
         ordering = ["created_at"]

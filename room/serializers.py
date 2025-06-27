@@ -19,6 +19,10 @@ class ChatRegenerateSerializer(serializers.Serializer):
     room_id = serializers.UUIDField()
 
 
+class ChatDeleteSerializer(serializers.Serializer):
+    chat_id = serializers.IntegerField(required=False)
+
+
 class RoomSerializer(serializers.ModelSerializer):
     character_title = serializers.SerializerMethodField()
     character_name = serializers.SerializerMethodField()
@@ -68,10 +72,6 @@ class ChatDetailSerializer(serializers.ModelSerializer):
         return room.character_id.name if obj.role == "ai" else room.user.username
 
 
-class ChatDeleteSerializer(serializers.Serializer):
-    chat_id = serializers.IntegerField(required=False)
-
-
 class RoomDetailSerializer(serializers.ModelSerializer):
     character_title = serializers.CharField(source="character_id.title", read_only=True)
     chats = serializers.SerializerMethodField()
@@ -94,28 +94,21 @@ class HistoryListSerializer(serializers.ModelSerializer):
 
     def get_saved_date(self, obj):
         now = timezone.now()
-        saved_at = obj.saved_at
-        time_diff = now - saved_at
+        time_diff = now - obj.saved_at
 
         if time_diff < timedelta(minutes=1):
             return "방금 전"
-
         elif time_diff < timedelta(hours=1):
-            minutes = int(time_diff.total_seconds() / 60)
-            return f"{minutes}분 전"
-
+            return f"{int(time_diff.total_seconds() / 60)}분 전"
         elif time_diff < timedelta(days=1):
-            hours = int(time_diff.total_seconds() / 3600)
-            return f"{hours}시간 전"
-
+            return f"{int(time_diff.total_seconds() / 3600)}시간 전"
         else:
-            return saved_at.strftime("%Y-%m-%d")
+            return obj.saved_at.strftime("%Y-%m-%d")
 
 
-class HistorySerializer(serializers.Serializer):
+class HistoryTitleSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=100)
 
 
-class HistoryUpdateSerializer(serializers.Serializer):
-    history_id = serializers.UUIDField(help_text="수정할 대화 내역 ID")
-    title = serializers.CharField(max_length=100, help_text="변경할 제목")
+class HistoryUpdateSerializer(HistoryTitleSerializer):
+    history_id = serializers.UUIDField()

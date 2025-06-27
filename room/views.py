@@ -19,7 +19,7 @@ from .serializers import (
     RoomSerializer,
     RoomDetailSerializer,
     ChatDeleteSerializer,
-    HistorySerializer,
+    HistoryTitleSerializer,
     HistoryListSerializer,
     HistoryUpdateSerializer,
 )
@@ -393,7 +393,7 @@ class HistoryAPIView(APIView):
     @extend_schema(
         summary="대화 내역 저장",
         description="현재 채팅방의 대화 내역을 캐릭터에 저장합니다.",
-        request=HistorySerializer,
+        request=HistoryTitleSerializer,
         responses={
             200: OpenApiResponse(description="대화 내역 저장"),
             401: OpenApiResponse(description="인증되지 않은 사용자"),
@@ -402,7 +402,7 @@ class HistoryAPIView(APIView):
         },
     )
     def post(self, request, room_id):
-        serializer = HistorySerializer(data=request.data)
+        serializer = HistoryTitleSerializer(data=request.data)
 
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

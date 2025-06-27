@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
+from django.http import Http404
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
@@ -21,7 +22,6 @@ from .serializers import (
     ChatDeleteSerializer,
     HistoryTitleSerializer,
     HistoryListSerializer,
-    HistoryUpdateSerializer,
 )
 from .services import ChatService
 
@@ -447,44 +447,38 @@ class HistoryAPIView(APIView):
             status=status.HTTP_200_OK,
         )
 
+
+class HistoryDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_conversation_history(self, history_id, user):
+        try:
+            conversation_history = ConversationHistory.objects.get(
+                history_id=history_id, user=user
+            )
+            return conversation_history
+        except ConversationHistory.DoesNotExist:
+            raise Http404("존재하지 않는 대화 내역이거나 접근 권한이 없습니다.")
+
     @extend_schema(
         summary="저장된 대화 내역 제목 수정",
         description="저장된 대화 내역의 제목을 수정합니다.",
-        request=HistoryUpdateSerializer,
+        request=HistoryTitleSerializer,
         responses={
             200: OpenApiResponse(description="대화 내역 제목 수정 성공"),
             400: OpenApiResponse(description="잘못된 요청"),
             401: OpenApiResponse(description="인증되지 않은 사용자"),
-            403: OpenApiResponse(description="접근 권한이 없음"),
             404: OpenApiResponse(description="존재하지 않는 대화 내역"),
         },
     )
-    def put(self, request, room_id):
-        serializer = HistoryUpdateSerializer(data=request.data)
+    def put(self, request, room_id, history_id):
+        serializer = HistoryTitleSerializer(data=request.data)
 
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        title = serializer.validated_data["title"]
-        history_id = request.data.get("history_id")
-
-        if not history_id:
-            return Response(
-                {"error": "history_id가 필요합니다."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        try:
-            conversation_history = ConversationHistory.objects.get(
-                history_id=history_id, user=request.user
-            )
-        except ConversationHistory.DoesNotExist:
-            return Response(
-                {"error": "존재하지 않는 대화 내역이거나 접근 권한이 없습니다."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        conversation_history.title = title
+        conversation_history = self.get_conversation_history(history_id, request.user)
+        conversation_history.title = serializer.validated_data["title"]
         conversation_history.save()
 
         return Response(
@@ -494,4 +488,22 @@ class HistoryAPIView(APIView):
                 "title": conversation_history.title,
             },
             status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        summary="저장된 대화 내역 삭제",
+        description="저장된 대화 내역을 삭제합니다.",
+        responses={
+            204: OpenApiResponse(description="대화 내역 삭제 성공"),
+            401: OpenApiResponse(description="인증되지 않은 사용자"),
+            404: OpenApiResponse(description="존재하지 않는 대화 내역"),
+        },
+    )
+    def delete(self, request, room_id, history_id):
+        conversation_history = self.get_conversation_history(history_id, request.user)
+        conversation_history.delete()
+
+        return Response(
+            {"message": "대화 내역이 삭제되었습니다."},
+            status=status.HTTP_204_NO_CONTENT,
         )

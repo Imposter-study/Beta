@@ -4,7 +4,16 @@ from .models import Room, Chat
 
 class ChatRequestSerializer(serializers.Serializer):
     character_id = serializers.CharField(max_length=50)
+    message = serializers.CharField(max_length=1000, allow_blank=True)
+
+
+class ChatUpdateSerializer(serializers.Serializer):
+    chat_id = serializers.IntegerField()
     message = serializers.CharField(max_length=1000)
+
+
+class ChatRegenerateSerializer(serializers.Serializer):
+    room_id = serializers.UUIDField()
 
 
 class RoomSerializer(serializers.ModelSerializer):
@@ -49,11 +58,15 @@ class ChatDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Chat
-        fields = ["content", "name", "created_at"]
+        fields = ["chat_id", "content", "name", "created_at"]
 
     def get_name(self, obj):
         room = obj.room
         return room.character_id.name if obj.role == "ai" else room.user.username
+
+
+class ChatDeleteSerializer(serializers.Serializer):
+    chat_id = serializers.IntegerField(required=False)
 
 
 class RoomDetailSerializer(serializers.ModelSerializer):

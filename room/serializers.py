@@ -108,3 +108,7 @@ class HistoryListSerializer(serializers.ModelSerializer):
 
 class HistoryTitleSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=100)
+
+
+class HistoryLoadSerializer(serializers.Serializer):
+    history_id = serializers.UUIDField()

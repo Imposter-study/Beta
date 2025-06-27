@@ -1,5 +1,8 @@
+from datetime import timedelta
+from django.utils import timezone
 from rest_framework import serializers
 from .models import Room, Chat
+from characters.models import ConversationHistory
 
 
 class ChatRequestSerializer(serializers.Serializer):
@@ -84,3 +87,30 @@ class RoomDetailSerializer(serializers.ModelSerializer):
 
 class ChatHistorySaveSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=100)
+
+
+class ConversationHistoryListSerializer(serializers.ModelSerializer):
+    saved_date = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ConversationHistory
+        fields = ["history_id", "title", "last_message", "saved_date"]
+
+    def get_saved_date(self, obj):
+        now = timezone.now()
+        saved_at = obj.saved_at
+        time_diff = now - saved_at
+
+        if time_diff < timedelta(minutes=1):
+            return "방금 전"
+
+        elif time_diff < timedelta(hours=1):
+            minutes = int(time_diff.total_seconds() / 60)
+            return f"{minutes}분 전"
+
+        elif time_diff < timedelta(days=1):
+            hours = int(time_diff.total_seconds() / 3600)
+            return f"{hours}시간 전"
+
+        else:
+            return saved_at.strftime("%Y-%m-%d")

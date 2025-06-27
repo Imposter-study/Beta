@@ -20,6 +20,7 @@ from .serializers import (
     RoomDetailSerializer,
     ChatDeleteSerializer,
     ChatHistorySaveSerializer,
+    ConversationHistoryListSerializer,
 )
 from .services import ChatService
 
@@ -368,10 +369,34 @@ class ChatHistoryAPIView(APIView):
         return room
 
     @extend_schema(
-        summary="대화 내역 저장",
-        description="현재 채팅방의 대화 내역을 캐릭터에 저장하고 채팅방의 대화 내역을 초기화합니다.",
+        summary="대화 내역 목록 조회",
+        description="저장한 대화 내역 목록을 조회합니다.",
         responses={
-            200: OpenApiResponse(description="대화 내역 저장 및 초기화 성공"),
+            200: ConversationHistoryListSerializer(many=True),
+            401: OpenApiResponse(description="인증되지 않은 사용자"),
+            403: OpenApiResponse(description="접근 권한이 없음"),
+            404: OpenApiResponse(description="존재하지 않는 채팅방"),
+        },
+    )
+    def get(self, request, room_id):
+        room = self.get_room(room_id, request.user)
+
+        conversation_histories = ConversationHistory.objects.filter(
+            character=room.character_id, user=request.user
+        ).order_by("-saved_at")
+
+        serializer = ConversationHistoryListSerializer(
+            conversation_histories, many=True
+        )
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        summary="대화 내역 저장",
+        description="현재 채팅방의 대화 내역을 캐릭터에 저장합니다.",
+        request=ChatHistorySaveSerializer,
+        responses={
+            200: OpenApiResponse(description="대화 내역 저장"),
             401: OpenApiResponse(description="인증되지 않은 사용자"),
             403: OpenApiResponse(description="접근 권한이 없음"),
             404: OpenApiResponse(description="존재하지 않는 채팅방"),

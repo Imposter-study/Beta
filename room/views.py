@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -19,6 +20,35 @@ from .serializers import (
     ChatDeleteSerializer,
 )
 from .services import ChatService
+
+
+class RoomAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="채팅방 리스트 조회",
+        description="현재 로그인 한 사용자의 채팅방의 목록을 조회합니다.",
+        responses={
+            200: RoomSerializer(many=True),
+            401: OpenApiResponse(description="인증되지 않은 사용자"),
+        },
+    )
+    def get(self, request):
+        rooms = (
+            Room.objects.filter(user=request.user)
+            .select_related("character_id")
+            .prefetch_related(
+                Prefetch(
+                    "chats",
+                    queryset=Chat.objects.order_by("-created_at")[:1],
+                    to_attr="latest_chat",
+                )
+            )
+            .order_by("-updated_at")
+        )
+
+        serializer = RoomSerializer(rooms, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class ChatAPIView(APIView):
@@ -70,47 +100,61 @@ class ChatAPIView(APIView):
 
         return Response(response_data, status=status.HTTP_200_OK)
 
+
+class ChatSuggestionAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
     @extend_schema(
-        summary="메시지 수정",
-        description="chat_id를 입력받아 해당 메시지를 수정합니다.",
-        request=ChatUpdateSerializer,
+        summary="추천 답변 생성",
+        description="이전 대화 내역을 기준으로 사용자가 할 수 있는 추천 답변 3가지를 생성합니다.",
+        request=None,
         responses={
-            200: ChatUpdateSerializer,
-            400: OpenApiResponse(description="잘못된 요청"),
+            200: OpenApiResponse(description="추천 답변 생성 성공"),
+            400: OpenApiResponse(description="잘못된 요청 또는 대화 내역 없음"),
             401: OpenApiResponse(description="인증되지 않은 사용자"),
-            403: OpenApiResponse(description="사용자의 메시지, 접근 권한 없음"),
-            404: OpenApiResponse(description="존재하지 않는 채팅"),
+            403: OpenApiResponse(description="접근 권한이 없음"),
+            404: OpenApiResponse(description="존재하지 않는 채팅방"),
         },
     )
-    def put(self, request):
-        serializer = ChatUpdateSerializer(data=request.data)
+    def post(self, request, room_id):
+        try:
+            room = Room.objects.get(room_id=room_id)
+        except Room.DoesNotExist:
+            return Response(
+                {"error": "존재하지 않는 채팅방입니다."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        chat_id = serializer.validated_data["chat_id"]
-        update_message = serializer.validated_data["message"]
-
-        chat = get_object_or_404(Chat, chat_id=chat_id)
-
-        if chat.room.user != request.user:
+        if room.user != request.user:
             return Response(
                 {"error": "해당 채팅방에 대한 접근 권한이 없습니다."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        if chat.role == "user":
+        chat_service = ChatService()
+
+        try:
+            memory = chat_service.create_memory_from_history(room)
+            if not memory.chat_memory.messages:
+                return Response(
+                    {"error": "추천 답변을 생성할 대화 내역이 없습니다."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            suggestions = []
+            for _ in range(settings.SUGGESTIONS):
+                suggestion = chat_service.get_chat_suggestion(room)
+                suggestions.append(suggestion)
+
+            response_data = {"suggestions": suggestions}
+
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Exception:
             return Response(
-                {"error": "사용자 메시지는 수정할 수 없습니다."},
-                status=status.HTTP_403_FORBIDDEN,
+                {"error": "추천 답변 생성 중 오류가 발생했습니다."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-
-        chat.content = update_message
-        chat.save()
-
-        return Response(
-            {"message": "메시지가 수정되었습니다."}, status=status.HTTP_200_OK
-        )
 
 
 class ChatRegenerateAPIView(APIView):
@@ -180,35 +224,6 @@ class ChatRegenerateAPIView(APIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 
-class RoomAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    @extend_schema(
-        summary="채팅방 리스트 조회",
-        description="현재 로그인 한 사용자의 채팅방의 목록을 조회합니다.",
-        responses={
-            200: RoomSerializer(many=True),
-            401: OpenApiResponse(description="인증되지 않은 사용자"),
-        },
-    )
-    def get(self, request):
-        rooms = (
-            Room.objects.filter(user=request.user)
-            .select_related("character_id")
-            .prefetch_related(
-                Prefetch(
-                    "chats",
-                    queryset=Chat.objects.order_by("-created_at")[:1],
-                    to_attr="latest_chat",
-                )
-            )
-            .order_by("-updated_at")
-        )
-
-        serializer = RoomSerializer(rooms, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
 class RoomDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -236,6 +251,49 @@ class RoomDetailAPIView(APIView):
         serializer = RoomDetailSerializer(room)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        summary="메시지 수정",
+        description="chat_id를 입력받아 해당 메시지를 수정합니다.",
+        request=ChatUpdateSerializer,
+        responses={
+            200: ChatUpdateSerializer,
+            400: OpenApiResponse(description="잘못된 요청"),
+            401: OpenApiResponse(description="인증되지 않은 사용자"),
+            403: OpenApiResponse(description="사용자의 메시지, 접근 권한 없음"),
+            404: OpenApiResponse(description="존재하지 않는 채팅"),
+        },
+    )
+    def put(self, request, room_id):
+        serializer = ChatUpdateSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        chat_id = serializer.validated_data["chat_id"]
+        update_message = serializer.validated_data["message"]
+
+        room = self.get_room(room_id, request.user)
+        chat = get_object_or_404(Chat, chat_id=chat_id)
+
+        if chat.room != room:
+            return Response(
+                {"error": "해당 채팅이 이 채팅방에 속하지 않습니다."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if chat.role == "user":
+            return Response(
+                {"error": "사용자 메시지는 수정할 수 없습니다."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        chat.content = update_message
+        chat.save()
+
+        return Response(
+            {"message": "메시지가 수정되었습니다."}, status=status.HTTP_200_OK
+        )
 
     @extend_schema(
         summary="채팅방 나가기",

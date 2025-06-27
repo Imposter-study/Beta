@@ -84,6 +84,7 @@ class CharacterSerializer(CharacterBaseSerializer):
 
         return representation
 
+    # 캐릭터 생성시 해시태그
     def create(self, validated_data):
         hashtag_data = validated_data.pop("hashtags", [])
         user = validated_data.pop("user", None)
@@ -98,6 +99,21 @@ class CharacterSerializer(CharacterBaseSerializer):
             character.hashtags.add(hashtag)
 
         return character
+
+    # 캐릭터 수정시 해시태그
+    def update(self, character_obj, validated_data):
+        hashtag_data = validated_data.pop("hashtags", None)
+
+        character_obj = super().update(character_obj, validated_data)
+
+        if hashtag_data is not None:
+            character_obj.hashtags.clear()
+            for tag_dict in hashtag_data:
+                tag_name = tag_dict["tag_name"].lstrip("#")
+                hashtag, _ = Hashtag.objects.get_or_create(tag_name=tag_name)
+                character_obj.hashtags.add(hashtag)
+
+        return character_obj
 
 
 # 다른사람이 캐릭터를 조회할때

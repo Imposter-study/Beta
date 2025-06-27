@@ -112,5 +112,10 @@ class HistoryListSerializer(serializers.ModelSerializer):
             return saved_at.strftime("%Y-%m-%d")
 
 
-class HistoryTitleSerializer(serializers.Serializer):
+class HistorySerializer(serializers.Serializer):
     title = serializers.CharField(max_length=100)
+
+
+class HistoryUpdateSerializer(serializers.Serializer):
+    history_id = serializers.UUIDField(help_text="수정할 대화 내역 ID")
+    title = serializers.CharField(max_length=100, help_text="변경할 제목")

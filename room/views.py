@@ -19,8 +19,9 @@ from .serializers import (
     RoomSerializer,
     RoomDetailSerializer,
     ChatDeleteSerializer,
-    HistoryTitleSerializer,
+    HistorySerializer,
     HistoryListSerializer,
+    HistoryUpdateSerializer,
 )
 from .services import ChatService
 
@@ -357,7 +358,7 @@ class RoomDetailAPIView(APIView):
         )
 
 
-class ChatHistoryAPIView(APIView):
+class HistoryAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get_room(self, room_id, user):
@@ -385,16 +386,14 @@ class ChatHistoryAPIView(APIView):
             character=room.character_id, user=request.user
         ).order_by("-saved_at")
 
-        serializer = HistoryListSerializer(
-            conversation_histories, many=True
-        )
+        serializer = HistoryListSerializer(conversation_histories, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="대화 내역 저장",
         description="현재 채팅방의 대화 내역을 캐릭터에 저장합니다.",
-        request=HistoryTitleSerializer,
+        request=HistorySerializer,
         responses={
             200: OpenApiResponse(description="대화 내역 저장"),
             401: OpenApiResponse(description="인증되지 않은 사용자"),
@@ -403,7 +402,7 @@ class ChatHistoryAPIView(APIView):
         },
     )
     def post(self, request, room_id):
-        serializer = HistoryTitleSerializer(data=request.data)
+        serializer = HistorySerializer(data=request.data)
 
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -444,6 +443,55 @@ class ChatHistoryAPIView(APIView):
                 "history_id": conversation_history.history_id,
                 "title": conversation_history.title,
                 "saved_chats": len(chat_history),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        summary="저장된 대화 내역 제목 수정",
+        description="저장된 대화 내역의 제목을 수정합니다.",
+        request=HistoryUpdateSerializer,
+        responses={
+            200: OpenApiResponse(description="대화 내역 제목 수정 성공"),
+            400: OpenApiResponse(description="잘못된 요청"),
+            401: OpenApiResponse(description="인증되지 않은 사용자"),
+            403: OpenApiResponse(description="접근 권한이 없음"),
+            404: OpenApiResponse(description="존재하지 않는 대화 내역"),
+        },
+    )
+    def put(self, request, room_id):
+        serializer = HistoryUpdateSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        title = serializer.validated_data["title"]
+        history_id = request.data.get("history_id")
+
+        if not history_id:
+            return Response(
+                {"error": "history_id가 필요합니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            conversation_history = ConversationHistory.objects.get(
+                history_id=history_id, user=request.user
+            )
+        except ConversationHistory.DoesNotExist:
+            return Response(
+                {"error": "존재하지 않는 대화 내역이거나 접근 권한이 없습니다."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        conversation_history.title = title
+        conversation_history.save()
+
+        return Response(
+            {
+                "message": "대화 내역 제목이 수정되었습니다.",
+                "history_id": conversation_history.history_id,
+                "title": conversation_history.title,
             },
             status=status.HTTP_200_OK,
         )

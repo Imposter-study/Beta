@@ -85,11 +85,7 @@ class RoomDetailSerializer(serializers.ModelSerializer):
         return ChatDetailSerializer(chats, many=True).data
 
 
-class ChatHistorySaveSerializer(serializers.Serializer):
-    title = serializers.CharField(max_length=100)
-
-
-class ConversationHistoryListSerializer(serializers.ModelSerializer):
+class HistoryListSerializer(serializers.ModelSerializer):
     saved_date = serializers.SerializerMethodField()
 
     class Meta:
@@ -114,3 +110,7 @@ class ConversationHistoryListSerializer(serializers.ModelSerializer):
 
         else:
             return saved_at.strftime("%Y-%m-%d")
+
+
+class HistoryTitleSerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=100)

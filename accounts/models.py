@@ -3,6 +3,8 @@ from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from datetime import timedelta
 import random, uuid
+from django.conf import settings
+
 
 class User(AbstractUser):
     GENDER_CHOICES = [("M", "남자"), ("F", "여자"), ("O", "기타")]
@@ -29,9 +31,6 @@ class User(AbstractUser):
         upload_to="profile_pics/", blank=True, null=True
     )
 
-    # follower = models.ManyToManyField(
-    #    "self", symmetrical=False, related_name="following", blank=True
-    # )
     def save(self, *args, **kwargs):  # 자동 닉네임 생성 추가
         if not self.nickname:
             self.nickname = self.generate_random_nickname()
@@ -79,3 +78,19 @@ class ChatProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.chat_nickname}"
+
+
+class Follow(models.Model):
+    from_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, related_name="following", on_delete=models.CASCADE
+    )
+    to_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, related_name="followers", on_delete=models.CASCADE
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("from_user", "to_user")
+
+    def __str__(self):
+        return f"{self.from_user.username} follows {self.to_user.username}"

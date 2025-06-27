@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate
 from .models import ChatProfile
+from .models import Follow
 
 
 User = get_user_model()
@@ -136,3 +137,11 @@ class ChatProfileSerializer(serializers.ModelSerializer):
             "is_default",
         ]
         read_only_fields = ["id"]
+
+
+# 팔로우
+class FollowSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Follow
+        fields = ["id", "from_user", "to_user", "created_at"]
+        read_only_fields = ["from_user", "created_at"]

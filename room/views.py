@@ -352,3 +352,62 @@ class RoomDetailAPIView(APIView):
             {"message": "대화 내역 삭제", "deleted_count": deleted_count},
             status=status.HTTP_200_OK,
         )
+
+
+class ChatHistoryAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_room(self, room_id, user):
+        room = get_object_or_404(Room, room_id=room_id)
+
+        if room.user != user:
+            raise PermissionDenied("해당 채팅방에 대한 접근 권한이 없습니다.")
+
+        return room
+
+    @extend_schema(
+        summary="대화 내역 저장",
+        description="현재 채팅방의 대화 내역을 캐릭터에 저장하고 채팅방의 대화 내역을 초기화합니다.",
+        responses={
+            200: OpenApiResponse(description="대화 내역 저장 및 초기화 성공"),
+            401: OpenApiResponse(description="인증되지 않은 사용자"),
+            403: OpenApiResponse(description="접근 권한이 없음"),
+            404: OpenApiResponse(description="존재하지 않는 채팅방"),
+        },
+    )
+    def post(self, request, room_id):
+        room = self.get_room(room_id, request.user)
+
+        character = room.character_id
+        user_id_str = str(request.user.id)
+
+        if user_id_str not in character.conversations:
+            character.conversations[user_id_str] = []
+
+        chats = Chat.objects.filter(room=room).order_by("created_at")
+
+        saved_chats_count = 0
+        for chat in chats:
+            character.conversations[user_id_str].append(
+                {
+                    "content": chat.content,
+                    "role": chat.role,
+                    "timestamp": chat.created_at.isoformat(),
+                }
+            )
+            saved_chats_count += 1
+
+        character.save()
+
+        chats_to_delete = Chat.objects.filter(room=room)
+        deleted_count = chats_to_delete.count()
+        chats_to_delete.delete()
+
+        return Response(
+            {
+                "message": "대화 내역이 캐릭터에 저장되고 채팅방이 초기화되었습니다.",
+                "saved_chats": saved_chats_count,
+                "deleted_count": deleted_count,
+            },
+            status=status.HTTP_200_OK,
+        )

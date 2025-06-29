@@ -13,6 +13,23 @@ urlpatterns = [
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("kakao/login/", views.KakaoLogin.as_view(), name="kakao_login"),
     path("google/login/", views.GoogleLogin.as_view(), name="google_login"),
+    path(
+        "chat_profiles/",
+        views.ChatProfileView.as_view(),
+        name="chat_profile_list_create",
+    ),
+    path(
+        "chat_profiles/<uuid:chatprofile_id>/",
+        views.ChatProfileDetailView.as_view(),
+        name="chat_profile_detail",
+    ),
+    path("follow/", views.FollowCreateView.as_view(), name="follow"),
+    path("unfollow/<int:to_user_id>/", views.UnfollowView.as_view(), name="unfollow"),
+    path(
+        "follow/count/<int:user_id>/",
+        views.FollowCountView.as_view(),
+        name="follow_count",
+    ),
     path("<str:nickname>/", views.UserProfileView.as_view()),
 ]
 

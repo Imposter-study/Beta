@@ -1,9 +1,11 @@
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, permissions
+from rest_framework import status, permissions, generics
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.permissions import IsAuthenticated
 from django.conf import settings
 import requests
 from allauth.socialaccount.providers.kakao import views as kakao_view
@@ -13,8 +15,7 @@ from allauth.socialaccount.models import SocialAccount
 from django.http import JsonResponse
 from allauth.socialaccount.providers.google import views as google_view
 
-from rest_framework.parsers import MultiPartParser, FormParser
-from .models import User
+from .models import User, ChatProfile, Follow
 from .serializers import (
     SignUpSerializer,
     MyProfileSerializer,
@@ -22,6 +23,8 @@ from .serializers import (
     LoginSerializer,
     PasswordChangeSerializer,
     DeactivateAccountSerializer,
+    ChatProfileSerializer,
+    FollowSerializer,
 )
 from drf_spectacular.utils import (
     extend_schema,
@@ -274,3 +277,140 @@ class GoogleLogin(SocialLoginView):
     )
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
+
+
+# 대화프로필
+@extend_schema(tags=["ChatProfile"])
+class ChatProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+    # parser_classes = [MultiPartParser, FormParser]
+
+    @extend_schema(
+        summary="내 대화 프로필 목록 조회",
+        description="로그인한 사용자의 대화 프로필 목록을 반환합니다.",
+        responses={200: ChatProfileSerializer(many=True)},
+    )
+    def get(self, request):
+        profiles = ChatProfile.objects.filter(user=request.user)
+        serializer = ChatProfileSerializer(profiles, many=True)
+        return Response(serializer.data)
+
+    @extend_schema(
+        summary="새 대화 프로필 생성",
+        description="새로운 대화 프로필을 생성합니다.",
+        request=ChatProfileSerializer,
+        responses={201: ChatProfileSerializer},
+    )
+    def post(self, request):
+        serializer = ChatProfileSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+
+# 기본대화프로필
+@extend_schema(tags=["ChatProfile"])
+class ChatProfileDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    # parser_classes = [MultiPartParser, FormParser]
+
+    @extend_schema(
+        summary="대화 프로필 수정",
+        description="특정 pk의 대화 프로필을 수정합니다.",
+        request=ChatProfileSerializer,
+        responses={200: ChatProfileSerializer},
+    )
+    def put(self, request, pk):
+        profile = get_object_or_404(ChatProfile, pk=pk, user=request.user)
+        serializer = ChatProfileSerializer(profile, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+    @extend_schema(
+        summary="대화 프로필 삭제",
+        description="특정 pk의 대화 프로필을 삭제합니다.",
+        responses={204: None},
+    )
+    def delete(self, request, pk):
+        profile = get_object_or_404(ChatProfile, pk=pk, user=request.user)
+        profile.delete()
+        return Response(status=204)
+
+
+# 팔로우
+@extend_schema(
+    summary="팔로우 생성",
+    description="현재 로그인한 사용자가 다른 사용자를 팔로우합니다.",
+    request=FollowSerializer,
+    responses={201: FollowSerializer},
+)
+class FollowCreateView(generics.CreateAPIView):
+    serializer_class = FollowSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(from_user=self.request.user)
+
+
+# 언팔로우
+@extend_schema(
+    summary="언팔로우",
+    description="현재 로그인한 사용자가 특정 유저를 언팔로우합니다. `to_user_id`는 언팔로우할 유저의 ID입니다.",
+    responses={
+        204: None,
+        404: {"detail": "팔로우 관계가 없습니다."},
+    },
+)
+class UnfollowView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, to_user_id):
+        try:
+            follow = Follow.objects.get(from_user=request.user, to_user_id=to_user_id)
+            follow.delete()
+            return Response(
+                {"detail": "언팔로우 성공"}, status=status.HTTP_204_NO_CONTENT
+            )
+        except Follow.DoesNotExist:
+            return Response(
+                {"detail": "팔로우 관계가 없습니다."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+
+# 팔로우/팔로워 수 조회
+@extend_schema(
+    summary="팔로우 수 조회",
+    description="해당 유저의 팔로잉 수와 팔로워 수를 조회합니다. `user_id`는 대상 유저의 ID입니다.",
+    responses={
+        200: {
+            "type": "object",
+            "properties": {
+                "user": {"type": "string", "description": "닉네임"},
+                "팔로잉": {"type": "integer"},
+                "팔로워": {"type": "integer"},
+            },
+        },
+        404: {"detail": "해당 유저가 존재하지 않습니다."},
+    },
+)
+class FollowCountView(APIView):
+    def get(self, request, user_id):
+        try:
+            user = User.objects.get(id=user_id)
+            following_count = user.following.count()
+            followers_count = user.followers.count()
+            return Response(
+                {
+                    "user": user.nickname,
+                    "팔로잉": following_count,
+                    "팔로워": followers_count,
+                }
+            )
+        except User.DoesNotExist:
+            return Response(
+                {"detail": "해당 유저가 존재하지 않습니다."},
+                status=status.HTTP_404_NOT_FOUND,
+            )

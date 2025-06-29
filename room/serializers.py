@@ -1,5 +1,8 @@
+from datetime import timedelta
+from django.utils import timezone
 from rest_framework import serializers
 from .models import Room, Chat
+from characters.models import ConversationHistory
 
 
 class ChatRequestSerializer(serializers.Serializer):
@@ -14,6 +17,10 @@ class ChatUpdateSerializer(serializers.Serializer):
 
 class ChatRegenerateSerializer(serializers.Serializer):
     room_id = serializers.UUIDField()
+
+
+class ChatDeleteSerializer(serializers.Serializer):
+    chat_id = serializers.IntegerField(required=False)
 
 
 class RoomSerializer(serializers.ModelSerializer):
@@ -65,10 +72,6 @@ class ChatDetailSerializer(serializers.ModelSerializer):
         return room.character_id.name if obj.role == "ai" else room.user.username
 
 
-class ChatDeleteSerializer(serializers.Serializer):
-    chat_id = serializers.IntegerField(required=False)
-
-
 class RoomDetailSerializer(serializers.ModelSerializer):
     character_title = serializers.CharField(source="character_id.title", read_only=True)
     chats = serializers.SerializerMethodField()
@@ -80,3 +83,32 @@ class RoomDetailSerializer(serializers.ModelSerializer):
     def get_chats(self, obj):
         chats = Chat.objects.filter(room=obj).order_by("created_at")
         return ChatDetailSerializer(chats, many=True).data
+
+
+class HistoryListSerializer(serializers.ModelSerializer):
+    saved_date = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ConversationHistory
+        fields = ["history_id", "title", "last_message", "saved_date"]
+
+    def get_saved_date(self, obj):
+        now = timezone.now()
+        time_diff = now - obj.saved_at
+
+        if time_diff < timedelta(minutes=1):
+            return "방금 전"
+        elif time_diff < timedelta(hours=1):
+            return f"{int(time_diff.total_seconds() / 60)}분 전"
+        elif time_diff < timedelta(days=1):
+            return f"{int(time_diff.total_seconds() / 3600)}시간 전"
+        else:
+            return obj.saved_at.strftime("%Y-%m-%d")
+
+
+class HistoryTitleSerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=100)
+
+
+class HistoryLoadSerializer(serializers.Serializer):
+    history_id = serializers.UUIDField()

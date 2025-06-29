@@ -39,7 +39,6 @@ from .serializers import (
         },
     ),
 )
-# TODO : 모든캐릭터조회 > 요구사항정의서 추가
 class CharacterAPIView(APIView):
     authentication_classes = [JWTAuthentication]
 
@@ -56,7 +55,9 @@ class CharacterAPIView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = CharacterSerializer(data=request.data)
+        serializer = CharacterSerializer(
+            data=request.data, context={"request": request}
+        )
         if serializer.is_valid():
             serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)

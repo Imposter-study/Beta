@@ -93,12 +93,11 @@ class ConversationHistory(models.Model):
         verbose_name = "대화 내역"
         verbose_name_plural = "대화 내역들"
 
+    def save(self, *args, **kwargs):
+        if self.chat_history and not self.last_message:
+            self.last_message = self.chat_history[-1].get("content", "")[:50]
 
-def save(self, *args, **kwargs):
-    if self.chat_history and not self.last_message:
-        self.last_message = self.chat_history[-1].get("content", "")[:50]
-
-    super().save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.character.name} - {self.title}"

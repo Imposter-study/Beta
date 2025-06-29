@@ -7,7 +7,15 @@ from django.utils import timezone
 User = get_user_model()
 
 
-# TODO : 해시태그
+# 해시태그
+class Hashtag(models.Model):
+    tag_name = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return self.tag_name
+
+
+# 캐릭터
 class Character(models.Model):
     character = models.AutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="characters")
@@ -55,6 +63,11 @@ class Character(models.Model):
         settings.AUTH_USER_MODEL,
         related_name="scrapped_characters",
         blank=True,
+    )
+
+    # 해시태그
+    hashtags = models.ManyToManyField(
+        Hashtag, related_name="tag_characters", blank=True
     )
 
     def __str__(self):

@@ -10,6 +10,10 @@ class ChatRequestSerializer(serializers.Serializer):
     message = serializers.CharField(max_length=1000, allow_blank=True)
 
 
+class RoomCreateSerializer(serializers.Serializer):
+    character_id = serializers.UUIDField()
+
+
 class ChatUpdateSerializer(serializers.Serializer):
     chat_id = serializers.IntegerField()
     message = serializers.CharField(max_length=1000)

@@ -21,7 +21,6 @@ from .serializers import (
     RoomDetailSerializer,
     HistoryTitleSerializer,
     HistoryListSerializer,
-    HistoryLoadSerializer,
 )
 from .services import ChatService
 
@@ -150,7 +149,7 @@ class ChatAPIView(APIView):
     @extend_schema(
         summary="채팅 메시지 전송",
         description="""
-        이미 생성된 채팅방에서 챗봇과 메시지를 주고받는 API입니다.
+        채팅방에서 챗봇과 메시지를 주고받는 API입니다.
         user_message를 생략하면 이어서 AI가 응답만 생성합니다.
         """,
         request=ChatRequestSerializer,
@@ -185,7 +184,7 @@ class ChatAPIView(APIView):
         response_data = {
             "room_id": str(room.room_id),
             "user_id": room.user.id,
-            "character_id": character.id,
+            "character_id": character.pk,
             "character_name": character.name,
             "user_message": user_message,
             "ai_response": ai_response,
@@ -472,62 +471,6 @@ class HistoryAPIView(APIView):
             status=status.HTTP_200_OK,
         )
 
-    @extend_schema(
-        summary="대화 내역 불러오기",
-        description="저장된 대화 내역을 현재 채팅방에 불러옵니다. 기존 대화 내역은 모두 삭제됩니다.",
-        request=HistoryLoadSerializer,
-        responses={
-            200: OpenApiResponse(description="대화 내역 불러오기 성공"),
-            400: OpenApiResponse(description="잘못된 요청"),
-            401: OpenApiResponse(description="인증되지 않은 사용자"),
-            403: OpenApiResponse(description="접근 권한이 없음"),
-            404: OpenApiResponse(description="존재하지 않는 채팅방 또는 대화 내역"),
-        },
-    )
-    def patch(self, request, room_id):
-        history_id = request.data.get("history_id")
-
-        if not history_id:
-            return Response(
-                {"error": "history_id가 필요합니다."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        room = self.get_room(room_id, request.user)
-
-        try:
-            conversation_history = ConversationHistory.objects.get(
-                history_id=history_id, user=request.user
-            )
-        except ConversationHistory.DoesNotExist:
-            return Response(
-                {"error": "존재하지 않는 대화 내역이거나 접근 권한이 없습니다."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        deleted_count = Chat.objects.filter(room=room).count()
-        Chat.objects.filter(room=room).delete()
-
-        loaded_chats = []
-        for chat_data in conversation_history.chat_history:
-            chat = Chat.objects.create(
-                room=room,
-                content=chat_data["content"],
-                role=chat_data["role"],
-                created_at=chat_data["timestamp"],
-            )
-            loaded_chats.append(chat)
-
-        return Response(
-            {
-                "message": "대화 내역이 불러오기 완료.",
-                "deleted_count": deleted_count,
-                "loaded_count": len(loaded_chats),
-                "history_title": conversation_history.title,
-            },
-            status=status.HTTP_200_OK,
-        )
-
 
 class HistoryDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -587,4 +530,48 @@ class HistoryDetailAPIView(APIView):
         return Response(
             {"message": "삭제되었습니다."},
             status=status.HTTP_204_NO_CONTENT,
+        )
+
+    @extend_schema(
+        summary="대화 내역 불러오기",
+        description=(
+            "특정 대화 내역(history_id)을 해당 채팅방(room_id)에 불러옵니다. "
+            "불러오기 전에 기존 대화 내역은 모두 삭제됩니다."
+        ),
+        responses={
+            200: OpenApiResponse(description="대화 내역 불러오기 성공"),
+            400: OpenApiResponse(description="잘못된 요청"),
+            401: OpenApiResponse(description="인증되지 않은 사용자"),
+            403: OpenApiResponse(description="접근 권한이 없음"),
+            404: OpenApiResponse(description="존재하지 않는 채팅방 또는 대화 내역"),
+        },
+    )
+    def patch(self, request, room_id, history_id):
+        room = get_object_or_404(Room, room_id=room_id, user=request.user)
+
+        conversation_history = get_object_or_404(
+            ConversationHistory, history_id=history_id, user=request.user
+        )
+
+        deleted_count = Chat.objects.filter(room=room).count()
+        Chat.objects.filter(room=room).delete()
+
+        loaded_chats = []
+        for chat_data in conversation_history.chat_history:
+            chat = Chat.objects.create(
+                room=room,
+                content=chat_data["content"],
+                role=chat_data["role"],
+                created_at=chat_data["timestamp"],
+            )
+            loaded_chats.append(chat)
+
+        return Response(
+            {
+                "message": "대화 내역이 불러오기 완료.",
+                "deleted_count": deleted_count,
+                "loaded_count": len(loaded_chats),
+                "history_title": conversation_history.title,
+            },
+            status=status.HTTP_200_OK,
         )

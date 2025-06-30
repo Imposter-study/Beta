@@ -72,7 +72,6 @@ class ChatDetailSerializer(serializers.ModelSerializer):
 
 
 class ChatRequestSerializer(serializers.Serializer):
-    character_id = serializers.CharField(max_length=50)
     message = serializers.CharField(max_length=1000, allow_blank=True)
 
 
@@ -100,10 +99,6 @@ class HistoryListSerializer(serializers.ModelSerializer):
             return f"{int(time_diff.total_seconds() / 3600)}시간 전"
         else:
             return obj.saved_at.strftime("%Y-%m-%d")
-
-
-class HistoryLoadSerializer(serializers.Serializer):
-    history_id = serializers.UUIDField()
 
 
 class HistoryTitleSerializer(serializers.Serializer):

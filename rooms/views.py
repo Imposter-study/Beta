@@ -17,10 +17,8 @@ from .serializers import (
     ChatRequestSerializer,
     RoomCreateSerializer,
     ChatUpdateSerializer,
-    ChatRegenerateSerializer,
     RoomSerializer,
     RoomDetailSerializer,
-    ChatDeleteSerializer,
     HistoryTitleSerializer,
     HistoryListSerializer,
     HistoryLoadSerializer,
@@ -201,8 +199,8 @@ class ChatMessageDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        summary="AI 응답 메시지 수정",
-        description="chat_id에 해당하는 AI 응답 메시지를 수정합니다.",
+        summary="AI 메시지 수정",
+        description="AI의 응답 메시지를 수정합니다.",
         request=ChatUpdateSerializer,
         responses={
             200: OpenApiResponse(description="메시지 수정 성공"),
@@ -242,7 +240,6 @@ class ChatMessageDetailView(APIView):
     @extend_schema(
         summary="대화 내역 삭제",
         description="chat_id부터 해당 채팅방의 최신 메시지까지 삭제합니다.",
-        request=ChatDeleteSerializer,
         responses={
             200: OpenApiResponse(description="대화 내역 삭제 성공"),
             400: OpenApiResponse(description="잘못된 요청"),
@@ -332,7 +329,7 @@ class ChatRegenerateAPIView(APIView):
     @extend_schema(
         summary="메시지 재생성",
         description="마지막 사용자 메시지를 기준으로 AI 응답을 재생성합니다.",
-        request=ChatRegenerateSerializer,
+        request=None,
         responses={
             200: OpenApiResponse(description="AI 응답 재생성 성공"),
             400: OpenApiResponse(description="잘못된 요청"),
@@ -343,14 +340,7 @@ class ChatRegenerateAPIView(APIView):
             ),
         },
     )
-    def post(self, request):
-        serializer = ChatRegenerateSerializer(data=request.data)
-
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        room_id = serializer.validated_data["room_id"]
-
+    def post(self, request, room_id):
         try:
             room = Room.objects.get(room_id=room_id)
         except Room.DoesNotExist:

@@ -35,6 +35,7 @@ class RoomAPIView(APIView):
             200: RoomSerializer(many=True),
             401: OpenApiResponse(description="인증되지 않은 사용자"),
         },
+        tags=["rooms/room"],
     )
     def get(self, request):
         rooms = (
@@ -63,6 +64,7 @@ class RoomAPIView(APIView):
             401: OpenApiResponse(description="인증되지 않은 사용자"),
             409: OpenApiResponse(description="이미 채팅방이 존재함"),
         },
+        tags=["rooms/room"],
     )
     class RoomCreateView(APIView):
         def post(self, request):
@@ -117,6 +119,7 @@ class RoomDetailAPIView(APIView):
             403: OpenApiResponse(description="접근 권한이 없음"),
             404: OpenApiResponse(description="존재하지 않는 채팅방"),
         },
+        tags=["rooms/room"],
     )
     def get(self, request, room_id):
         room = self.get_room(room_id, request.user)
@@ -134,6 +137,7 @@ class RoomDetailAPIView(APIView):
             403: OpenApiResponse(description="접근 권한이 없음"),
             404: OpenApiResponse(description="존재하지 않는 채팅방"),
         },
+        tags=["rooms/room"],
     )
     def delete(self, request, room_id):
         room = self.get_room(room_id, request.user)
@@ -159,6 +163,7 @@ class ChatAPIView(APIView):
             401: OpenApiResponse(description="인증되지 않은 사용자"),
             404: OpenApiResponse(description="채팅방을 찾을 수 없음"),
         },
+        tags=["rooms/message"],
     )
     def post(self, request, room_id):
         serializer = ChatRequestSerializer(data=request.data)
@@ -198,8 +203,8 @@ class ChatMessageDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        summary="AI 메시지 수정",
-        description="AI의 응답 메시지를 수정합니다.",
+        summary="메시지 수정",
+        description="응답 메시지를 수정합니다.",
         request=ChatUpdateSerializer,
         responses={
             200: OpenApiResponse(description="메시지 수정 성공"),
@@ -208,6 +213,7 @@ class ChatMessageDetailView(APIView):
             403: OpenApiResponse(description="사용자의 메시지 수정 불가"),
             404: OpenApiResponse(description="존재하지 않는 채팅 또는 채팅방"),
         },
+        tags=["rooms/message"],
     )
     def put(self, request, room_id, chat_id):
         serializer = ChatUpdateSerializer(data=request.data)
@@ -237,7 +243,7 @@ class ChatMessageDetailView(APIView):
         )
 
     @extend_schema(
-        summary="대화 내역 삭제",
+        summary="매시지 삭제",
         description="chat_id부터 해당 채팅방의 최신 메시지까지 삭제합니다.",
         responses={
             200: OpenApiResponse(description="대화 내역 삭제 성공"),
@@ -246,6 +252,7 @@ class ChatMessageDetailView(APIView):
             403: OpenApiResponse(description="접근 권한이 없음"),
             404: OpenApiResponse(description="존재하지 않는 채팅 또는 채팅방"),
         },
+        tags=["rooms/message"],
     )
     def delete(self, request, room_id, chat_id):
         room = get_object_or_404(Room, room_id=room_id, user=request.user)
@@ -280,6 +287,7 @@ class ChatSuggestionAPIView(APIView):
             403: OpenApiResponse(description="접근 권한이 없음"),
             404: OpenApiResponse(description="존재하지 않는 채팅방"),
         },
+        tags=["rooms/message"],
     )
     def post(self, request, room_id):
         try:
@@ -338,6 +346,7 @@ class ChatRegenerateAPIView(APIView):
                 description="존재하지 않는 채팅방 또는 사용자 메시지가 없음"
             ),
         },
+        tags=["rooms/message"],
     )
     def post(self, request, room_id):
         try:
@@ -402,6 +411,7 @@ class HistoryAPIView(APIView):
             403: OpenApiResponse(description="접근 권한이 없음"),
             404: OpenApiResponse(description="존재하지 않는 채팅방"),
         },
+        tags=["rooms/history"],
     )
     def get(self, request, room_id):
         room = self.get_room(room_id, request.user)
@@ -424,6 +434,7 @@ class HistoryAPIView(APIView):
             403: OpenApiResponse(description="접근 권한이 없음"),
             404: OpenApiResponse(description="존재하지 않는 채팅방"),
         },
+        tags=["rooms/history"],
     )
     def post(self, request, room_id):
         serializer = HistoryTitleSerializer(data=request.data)
@@ -494,6 +505,7 @@ class HistoryDetailAPIView(APIView):
             401: OpenApiResponse(description="인증되지 않은 사용자"),
             404: OpenApiResponse(description="존재하지 않는 대화 내역"),
         },
+        tags=["rooms/history"],
     )
     def put(self, request, room_id, history_id):
         serializer = HistoryTitleSerializer(data=request.data)
@@ -522,6 +534,7 @@ class HistoryDetailAPIView(APIView):
             401: OpenApiResponse(description="인증되지 않은 사용자"),
             404: OpenApiResponse(description="존재하지 않는 대화 내역"),
         },
+        tags=["rooms/history"],
     )
     def delete(self, request, room_id, history_id):
         conversation_history = self.get_conversation_history(history_id, request.user)
@@ -545,6 +558,7 @@ class HistoryDetailAPIView(APIView):
             403: OpenApiResponse(description="접근 권한이 없음"),
             404: OpenApiResponse(description="존재하지 않는 채팅방 또는 대화 내역"),
         },
+        tags=["rooms/history"],
     )
     def patch(self, request, room_id, history_id):
         room = get_object_or_404(Room, room_id=room_id, user=request.user)

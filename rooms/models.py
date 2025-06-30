@@ -31,9 +31,7 @@ class Chat(models.Model):
     content = models.TextField(verbose_name="메시지 내용")
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
     created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(
-        auto_now=True,
-    )
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["created_at"]

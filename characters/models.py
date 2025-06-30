@@ -1,6 +1,8 @@
+import uuid
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.conf import settings
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -71,3 +73,31 @@ class Character(models.Model):
     def __str__(self):
         return f"{self.title} ({self.name})"
 
+
+class ConversationHistory(models.Model):
+    history_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    character = models.ForeignKey(
+        "Character", on_delete=models.CASCADE, related_name="conversation_histories"
+    )
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="conversation_histories"
+    )
+
+    title = models.CharField(max_length=100)
+    chat_history = models.JSONField(default=list)
+    saved_at = models.DateTimeField(default=timezone.now)
+    last_message = models.TextField()
+
+    class Meta:
+        ordering = ["-saved_at"]
+        verbose_name = "대화 내역"
+        verbose_name_plural = "대화 내역들"
+
+    def save(self, *args, **kwargs):
+        if self.chat_history and not self.last_message:
+            self.last_message = self.chat_history[-1].get("content", "")[:50]
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.character.name} - {self.title}"

@@ -5,6 +5,8 @@ from .views import (
     ChatSuggestionAPIView,
     ChatRegenerateAPIView,
     RoomDetailAPIView,
+    HistoryAPIView,
+    HistoryDetailAPIView,
 )
 
 urlpatterns = [
@@ -13,4 +15,6 @@ urlpatterns = [
     path("regenerate/", ChatRegenerateAPIView.as_view()),
     path("<uuid:room_id>/", RoomDetailAPIView.as_view()),
     path("<uuid:room_id>/suggestions/", ChatSuggestionAPIView.as_view()),
+    path("<uuid:room_id>/history/", HistoryAPIView.as_view()),
+    path("<uuid:room_id>/history/<uuid:history_id>/", HistoryDetailAPIView.as_view()),
 ]

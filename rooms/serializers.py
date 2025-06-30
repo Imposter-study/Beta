@@ -102,9 +102,9 @@ class HistoryListSerializer(serializers.ModelSerializer):
             return obj.saved_at.strftime("%Y-%m-%d")
 
 
-class HistoryTitleSerializer(serializers.Serializer):
-    title = serializers.CharField(max_length=100)
-
-
 class HistoryLoadSerializer(serializers.Serializer):
     history_id = serializers.UUIDField()
+
+
+class HistoryTitleSerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=100)

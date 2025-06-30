@@ -1,7 +1,12 @@
+# Python Library
 from datetime import timedelta
+
+# Third-Party Package
 from django.utils import timezone
 from rest_framework import serializers
-from .models import Room, Chat
+
+# Local Apps
+from .models import Chat, Room
 from characters.models import ConversationHistory
 
 

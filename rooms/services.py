@@ -1,15 +1,20 @@
+# Python Library
+import logging
+
+# Third-Party Packages
 from django.conf import settings
-from .models import Chat
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.chains import LLMChain
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.prompts import (
     ChatPromptTemplate,
+    HumanMessagePromptTemplate,
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
-    HumanMessagePromptTemplate,
 )
-import logging
+
+# Local Apps
+from .models import Chat
 
 logger = logging.getLogger(__name__)
 

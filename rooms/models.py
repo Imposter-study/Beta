@@ -1,6 +1,11 @@
+# Python Library
 import uuid
+
+# Third-Party Package
 from django.db import models
 from django.utils import timezone
+
+# Local Apps
 from accounts.models import User
 from characters.models import Character
 

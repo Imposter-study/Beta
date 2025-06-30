@@ -8,10 +8,7 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
 
         if provider == "kakao":
             kakao_uid = str(sociallogin.account.uid)
-            kakao_nickname = data.get("properties", {}).get("nickname", "")
-
             user.username = kakao_uid
-            user.nickname = kakao_nickname
             user.email = None
             user.set_unusable_password()
 

@@ -97,11 +97,6 @@ class ChatRequestSerializer(serializers.Serializer):
     message = serializers.CharField(max_length=1000, allow_blank=True)
 
 
-class ChatUpdateSerializer(serializers.Serializer):
-    chat_id = serializers.IntegerField()
-    message = serializers.CharField(max_length=1000)
-
-
 class HistoryListSerializer(serializers.ModelSerializer):
     saved_date = serializers.SerializerMethodField()
 

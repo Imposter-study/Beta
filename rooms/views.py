@@ -15,7 +15,6 @@ from characters.models import Character, ConversationHistory
 from .models import Chat, Room
 from .serializers import (
     ChatRequestSerializer,
-    ChatUpdateSerializer,
     HistoryListSerializer,
     HistoryTitleSerializer,
     RoomCreateSerializer,
@@ -73,7 +72,7 @@ class RoomAPIView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         character_id = serializer.validated_data["character_id"]
-        character = get_object_or_404(Character, character=character_id)
+        character = get_object_or_404(Character, character_id=character_id)
         user = request.user
 
         room, created = Room.objects.get_or_create(
@@ -226,7 +225,7 @@ class ChatMessageDetailView(APIView):
     @extend_schema(
         summary="메시지 수정",
         description="응답 메시지를 수정합니다.",
-        request=ChatUpdateSerializer,
+        request=ChatRequestSerializer,
         responses={
             200: OpenApiResponse(description="메시지 수정 성공"),
             400: OpenApiResponse(description="잘못된 요청"),
@@ -237,7 +236,7 @@ class ChatMessageDetailView(APIView):
         tags=["rooms/message"],
     )
     def put(self, request, room_id, chat_id):
-        serializer = ChatUpdateSerializer(data=request.data)
+        serializer = ChatRequestSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -264,7 +263,7 @@ class ChatMessageDetailView(APIView):
         )
 
     @extend_schema(
-        summary="매시지 삭제",
+        summary="메시지 삭제",
         description="chat_id부터 해당 채팅방의 최신 메시지까지 삭제합니다.",
         responses={
             200: OpenApiResponse(description="대화 내역 삭제 성공"),

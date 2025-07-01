@@ -141,7 +141,6 @@ class RoomDetailAPIView(APIView):
     def patch(self, request, room_id):
         room = self.get_room(room_id, request.user)
 
-        # fixation 상태를 토글
         room.fixation = not room.fixation
         room.save()
 

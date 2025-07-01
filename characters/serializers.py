@@ -138,3 +138,9 @@ class CharacterSearchSerializer(CharacterBaseSerializer):
             representation["example_situation"] = []
 
         return representation
+
+
+class UserProfileCharacterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Character
+        fields = ["character", "name", "character_image"]

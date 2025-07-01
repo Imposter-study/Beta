@@ -135,6 +135,7 @@ class CharacterDetailAPIView(APIView):
 
 # __icontains 특정 문자열이 포함 필터 (대소문자 구분x), __contains: 대소문자구별 문자포함
 # distinct(): 중복검색 제거 ( 하나의 해시태그로 검색시 한캐릭이 여러번 검색될수있는 문제 )
+# 현재 해시태그 #안에는 띄어쓰기가 없어야함
 class CharacterSearchAPIView(APIView):
     @extend_schema(
         summary="이름,해시태그로 캐릭터 검색",

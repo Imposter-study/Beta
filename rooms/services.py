@@ -1,18 +1,20 @@
-from django.shortcuts import get_object_or_404
+# Python Library
+import logging
+
+# Third-Party Packages
 from django.conf import settings
-from .models import Room, Chat
-from accounts.models import User
-from characters.models import Character
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.chains import LLMChain
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.prompts import (
     ChatPromptTemplate,
+    HumanMessagePromptTemplate,
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
-    HumanMessagePromptTemplate,
 )
-import logging
+
+# Local Apps
+from .models import Chat
 
 logger = logging.getLogger(__name__)
 
@@ -25,16 +27,6 @@ class ChatService:
             max_tokens=settings.MAX_TOKENS,
             google_api_key=settings.GOOGLE_API_KEY,
         )
-
-    def get_or_create_room(self, character_id, user_id):
-        character = get_object_or_404(Character, character=character_id)
-        user = User.objects.get(id=user_id)
-
-        room, created = Room.objects.get_or_create(
-            user=user,
-            character_id=character,
-        )
-        return room, character
 
     def create_memory_from_history(self, room, before_datetime=None):
         limit = getattr(settings, "CONVERSATION_HISTORY_LIMIT")

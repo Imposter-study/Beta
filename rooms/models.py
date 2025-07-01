@@ -1,23 +1,29 @@
+# Python Library
 import uuid
+
+# Third-Party Package
 from django.db import models
 from django.utils import timezone
+
+# Local Apps
 from accounts.models import User
 from characters.models import Character
 
 
 class Room(models.Model):
     room_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
-    character_id = models.ForeignKey(Character, on_delete=models.CASCADE, default=1)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    character_id = models.ForeignKey(Character, on_delete=models.CASCADE)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
+    fixation = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = "채팅방"
         verbose_name_plural = "채팅방들"
 
     def __str__(self):
-        return f"{self.title} ({self.character_id})"
+        return f"{self.room_id} ({self.character_id})"
 
 
 class Chat(models.Model):
@@ -28,12 +34,10 @@ class Chat(models.Model):
 
     chat_id = models.AutoField(primary_key=True)
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="chats")
-    content = models.TextField(verbose_name="메시지 내용")
+    content = models.TextField()
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
     created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(
-        auto_now=True,
-    )
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["created_at"]

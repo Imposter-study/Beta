@@ -1,5 +1,7 @@
+
 from django.conf import settings
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
+from django.http import JsonResponse, HttpResponse
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -13,6 +15,7 @@ from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.models import SocialAccount
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from allauth.socialaccount.providers.kakao import views as kakao_view
+
 from allauth.socialaccount.providers.google import views as google_view
 
 from .models import User
@@ -284,6 +287,12 @@ class KakaoLogin(SocialLoginView):
         response.data["access"] = access_token
         response.data["refresh"] = refresh_token
         return response
+    
+def kakao_redirect(request):
+    code = request.GET.get("code")
+    if code:
+        return render(request, "accounts/redirect.html")
+    return HttpResponse("로그인 실패. 코드가 없습니다.")
 
 
 # 구글 소셜 로그인

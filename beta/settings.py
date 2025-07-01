@@ -207,6 +207,15 @@ SOCIALACCOUNT_ADAPTER = "accounts.adapters.CustomSocialAccountAdapter"
 ACCOUNT_SIGNUP_FIELDS = ["username*", "nickname*", "email"]
 ACCOUNT_LOGIN_METHODS = {"username"}
 
+# Swagger
+SPECTACULAR_SETTINGS = {
+    "TAGS": [
+        {"name": "rooms/room"},
+        {"name": "rooms/message"},
+        {"name": "rooms/history"},
+    ]
+}
+
 # LLM
 GOOGLE_API_KEY = env("GOOGLE_API_KEY")
 AI_MODEL = env("AI_MODEL")

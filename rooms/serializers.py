@@ -1,29 +1,17 @@
+# Python Library
 from datetime import timedelta
+
+# Third-Party Package
 from django.utils import timezone
 from rest_framework import serializers
-from .models import Room, Chat
+
+# Local Apps
+from .models import Chat, Room
 from characters.models import ConversationHistory
 
 
-class ChatRequestSerializer(serializers.Serializer):
-    character_id = serializers.CharField(max_length=50)
-    message = serializers.CharField(max_length=1000, allow_blank=True)
-
-
-class ChatUpdateSerializer(serializers.Serializer):
-    chat_id = serializers.IntegerField()
-    message = serializers.CharField(max_length=1000)
-
-
-class ChatRegenerateSerializer(serializers.Serializer):
-    room_id = serializers.UUIDField()
-
-
-class ChatDeleteSerializer(serializers.Serializer):
-    chat_id = serializers.IntegerField(required=False)
-
-
 class RoomSerializer(serializers.ModelSerializer):
+    character_id = serializers.SerializerMethodField()
     character_title = serializers.SerializerMethodField()
     character_name = serializers.SerializerMethodField()
     character_image = serializers.SerializerMethodField()
@@ -33,14 +21,29 @@ class RoomSerializer(serializers.ModelSerializer):
         model = Room
         fields = [
             "room_id",
+            "character_id",
             "character_title",
             "character_name",
             "character_image",
             "last_message",
             "created_at",
             "updated_at",
+            "fixation",
         ]
-        read_only_fields = ["room_id", "created_at", "updated_at"]
+        read_only_fields = [
+            "room_id",
+            "character_id",
+            "character_title",
+            "character_name",
+            "character_image",
+            "last_message",
+            "created_at",
+            "updated_at",
+            "fixation",
+        ]
+
+    def get_character_id(self, obj):
+        return obj.character_id.pk
 
     def get_character_title(self, obj):
         return obj.character_id.title
@@ -60,16 +63,9 @@ class RoomSerializer(serializers.ModelSerializer):
         return "대화를 시작해보세요!"
 
 
-class ChatDetailSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Chat
-        fields = ["chat_id", "content", "name", "created_at"]
-
-    def get_name(self, obj):
-        room = obj.room
-        return room.character_id.name if obj.role == "ai" else room.user.username
+class RoomCreateSerializer(serializers.Serializer):
+    # TODO: uuid 적용 후 수정 예정
+    character_id = serializers.IntegerField()
 
 
 class RoomDetailSerializer(serializers.ModelSerializer):
@@ -83,6 +79,27 @@ class RoomDetailSerializer(serializers.ModelSerializer):
     def get_chats(self, obj):
         chats = Chat.objects.filter(room=obj).order_by("created_at")
         return ChatDetailSerializer(chats, many=True).data
+
+
+class ChatDetailSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Chat
+        fields = ["chat_id", "content", "name", "created_at"]
+
+    def get_name(self, obj):
+        room = obj.room
+        return room.character_id.name if obj.role == "ai" else room.user.username
+
+
+class ChatRequestSerializer(serializers.Serializer):
+    message = serializers.CharField(max_length=1000, allow_blank=True)
+
+
+class ChatUpdateSerializer(serializers.Serializer):
+    chat_id = serializers.IntegerField()
+    message = serializers.CharField(max_length=1000)
 
 
 class HistoryListSerializer(serializers.ModelSerializer):
@@ -108,7 +125,3 @@ class HistoryListSerializer(serializers.ModelSerializer):
 
 class HistoryTitleSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=100)
-
-
-class HistoryLoadSerializer(serializers.Serializer):
-    history_id = serializers.UUIDField()

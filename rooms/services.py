@@ -1,18 +1,20 @@
-from django.shortcuts import get_object_or_404
+# Python Library
+import logging
+
+# Third-Party Packages
 from django.conf import settings
-from .models import Room, Chat
-from accounts.models import User
-from characters.models import Character
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.chains import LLMChain
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.prompts import (
     ChatPromptTemplate,
+    HumanMessagePromptTemplate,
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
-    HumanMessagePromptTemplate,
 )
-import logging
+
+# Local Apps
+from .models import Chat
 
 logger = logging.getLogger(__name__)
 
@@ -25,16 +27,6 @@ class ChatService:
             max_tokens=settings.MAX_TOKENS,
             google_api_key=settings.GOOGLE_API_KEY,
         )
-
-    def get_or_create_room(self, character_id, user_id):
-        character = get_object_or_404(Character, character=character_id)
-        user = User.objects.get(id=user_id)
-
-        room, created = Room.objects.get_or_create(
-            user=user,
-            character_id=character,
-        )
-        return room, character
 
     def create_memory_from_history(self, room, before_datetime=None):
         limit = getattr(settings, "CONVERSATION_HISTORY_LIMIT")
@@ -79,12 +71,23 @@ class ChatService:
             prompt += f"캐릭터 정보: {character.character_info}\n\n"
 
         if character.example_situation:
-            prompt += f"예시 상황: {character.example_situation}\n\n"
+            example_texts = []
+            for inner_list in character.example_situation:
+                if isinstance(inner_list, list):
+                    for item_dict in inner_list:
+                        if isinstance(item_dict, dict):
+                            role = item_dict.get("role", "")
+                            message = item_dict.get("message", "")
+                            if role and message:
+                                example_texts.append(f"{role}: {message}")
+
+            if example_texts:
+                example_text = "\n".join(example_texts)
+                prompt += f"예시 상황:\n{example_text}\n\n"
 
         if character.presentation:
             prompt += f"말투/스타일: {character.presentation}\n\n"
 
-        # 기본 지침 추가
         prompt += """대화 지침:
         - 위에 명시된 캐릭터의 성격과 특징을 일관되게 유지하세요
         - 자연스럽고 몰입감 있는 대화를 이어가세요

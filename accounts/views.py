@@ -280,6 +280,7 @@ class KakaoLogin(SocialLoginView):
 
         # 기존 회원이면 토큰 포함 정상 로그인 응답
         response.data["is_signup"] = True
+        response.data["nickname"] = user.nickname
         response.data["access"] = access_token
         response.data["refresh"] = refresh_token
         return response
@@ -332,6 +333,7 @@ class GoogleLogin(SocialLoginView):
 
         # 기존 회원이면 토큰 포함 정상 로그인 응답
         response.data["is_signup"] = True
+        response.data["nickname"] = user.nickname
         response.data["access"] = access_token
         response.data["refresh"] = refresh_token
         return response

@@ -6,20 +6,30 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('characters', '0006_character_scrapped_by'),
+        ("characters", "0006_character_scrapped_by"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Hashtag',
+            name="Hashtag",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('tag_name', models.CharField(max_length=255, unique=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("tag_name", models.CharField(max_length=255, unique=True)),
             ],
         ),
         migrations.AddField(
-            model_name='character',
-            name='hashtags',
-            field=models.ManyToManyField(blank=True, related_name='tag_characters', to='characters.hashtag'),
+            model_name="character",
+            name="hashtags",
+            field=models.ManyToManyField(
+                blank=True, related_name="tag_characters", to="characters.hashtag"
+            ),
         ),
     ]

@@ -1,26 +1,13 @@
+# Python Library
 from datetime import timedelta
+
+# Third-Party Package
 from django.utils import timezone
 from rest_framework import serializers
-from .models import Room, Chat
+
+# Local Apps
+from .models import Chat, Room
 from characters.models import ConversationHistory
-
-
-class ChatRequestSerializer(serializers.Serializer):
-    character_id = serializers.CharField(max_length=50)
-    message = serializers.CharField(max_length=1000, allow_blank=True)
-
-
-class ChatUpdateSerializer(serializers.Serializer):
-    chat_id = serializers.IntegerField()
-    message = serializers.CharField(max_length=1000)
-
-
-class ChatRegenerateSerializer(serializers.Serializer):
-    room_id = serializers.UUIDField()
-
-
-class ChatDeleteSerializer(serializers.Serializer):
-    chat_id = serializers.IntegerField(required=False)
 
 
 class RoomSerializer(serializers.ModelSerializer):
@@ -60,16 +47,8 @@ class RoomSerializer(serializers.ModelSerializer):
         return "대화를 시작해보세요!"
 
 
-class ChatDetailSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Chat
-        fields = ["chat_id", "content", "name", "created_at"]
-
-    def get_name(self, obj):
-        room = obj.room
-        return room.character_id.name if obj.role == "ai" else room.user.username
+class RoomCreateSerializer(serializers.Serializer):
+    character_id = serializers.UUIDField()
 
 
 class RoomDetailSerializer(serializers.ModelSerializer):
@@ -83,6 +62,27 @@ class RoomDetailSerializer(serializers.ModelSerializer):
     def get_chats(self, obj):
         chats = Chat.objects.filter(room=obj).order_by("created_at")
         return ChatDetailSerializer(chats, many=True).data
+
+
+class ChatDetailSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Chat
+        fields = ["chat_id", "content", "name", "created_at"]
+
+    def get_name(self, obj):
+        room = obj.room
+        return room.character_id.name if obj.role == "ai" else room.user.username
+
+
+class ChatRequestSerializer(serializers.Serializer):
+    message = serializers.CharField(max_length=1000, allow_blank=True)
+
+
+class ChatUpdateSerializer(serializers.Serializer):
+    chat_id = serializers.IntegerField()
+    message = serializers.CharField(max_length=1000)
 
 
 class HistoryListSerializer(serializers.ModelSerializer):
@@ -108,7 +108,3 @@ class HistoryListSerializer(serializers.ModelSerializer):
 
 class HistoryTitleSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=100)
-
-
-class HistoryLoadSerializer(serializers.Serializer):
-    history_id = serializers.UUIDField()

@@ -4,8 +4,8 @@ from .models import Room, Chat
 from accounts.models import User
 from characters.models import Character
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain.chains import LLMChain
 from langchain.memory import ConversationBufferWindowMemory
-from langchain.chains import ConversationChain
 from langchain.prompts import (
     ChatPromptTemplate,
     MessagesPlaceholder,
@@ -56,10 +56,36 @@ class ChatService:
 
         return memory
 
+    def recreate_memory_from_history(self, room, last_user_message):
+        limit = getattr(settings, "CONVERSATION_HISTORY_LIMIT")
+
+        memory = ConversationBufferWindowMemory(
+            k=limit,
+            return_messages=True,
+            memory_key="chat_history",
+        )
+
+        chats = Chat.objects.filter(
+            room=room, created_at__lt=last_user_message.created_at
+        ).order_by("-created_at")[:limit]
+        recent_chats = list(reversed(chats))
+
+        for chat in recent_chats:
+            if chat.role == "user":
+                memory.chat_memory.add_user_message(chat.content)
+            elif chat.role == "ai":
+                memory.chat_memory.add_ai_message(chat.content)
+
+        return memory
+
     def get_system_prompt(self, character):
         prompt = f"당신은 '{character.name}'입니다.\n"
         prompt += f"제목: {character.title}\n"
-        prompt += f"소개: {character.intro}\n\n"
+
+        if character.intro:
+            intro_messages = [item.get("message", "") for item in character.intro]
+            intro_text = " ".join(intro_messages)
+            prompt += f"소개: {intro_text}\n\n"
 
         if character.description:
             prompt += f"상세 설명: {character.description}\n\n"
@@ -93,19 +119,28 @@ class ChatService:
             ]
         )
 
-        chain = ConversationChain(
+        chain = LLMChain(
             llm=self.llm, prompt=prompt, memory=memory, verbose=settings.VERBOSE
         )
 
         return chain
 
-    def get_ai_response(self, room, user_message):
+    def save_chat(self, room, content, role):
+        return Chat.objects.create(room=room, content=content, role=role)
+
+    def get_ai_response(self, room, user_message=None, last_user_message=None):
         try:
             character = room.character_id
 
-            memory = self.create_memory_from_history(room)
+            if last_user_message:
+                memory = self.recreate_memory_from_history(room, last_user_message)
+            else:
+                memory = self.create_memory_from_history(room)
 
             chain = self.create_conversation_chain(character, memory)
+
+            if user_message == None:
+                user_message = ""
 
             response = chain.predict(input=user_message)
 
@@ -114,6 +149,3 @@ class ChatService:
         except Exception as e:
             logger.error(f"AI 응답 생성 오류: {e}")
             return "죄송합니다. 현재 응답을 생성할 수 없습니다."
-
-    def save_chat(self, room, content, role):
-        return Chat.objects.create(room=room, content=content, role=role)

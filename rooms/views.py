@@ -66,37 +66,36 @@ class RoomAPIView(APIView):
         },
         tags=["rooms/room"],
     )
-    class RoomCreateView(APIView):
-        def post(self, request):
-            serializer = RoomCreateSerializer(data=request.data)
+    def post(self, request):
+        serializer = RoomCreateSerializer(data=request.data)
 
-            if not serializer.is_valid():
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            character_id = serializer.validated_data["character_id"]
-            character = get_object_or_404(Character, character=character_id)
-            user = request.user
+        character_id = serializer.validated_data["character_id"]
+        character = get_object_or_404(Character, character=character_id)
+        user = request.user
 
-            room, created = Room.objects.get_or_create(
-                user=user,
-                character_id=character,
+        room, created = Room.objects.get_or_create(
+            user=user,
+            character_id=character,
+        )
+
+        if not created:
+            return Response(
+                {"detail": "이미 해당 캐릭터와의 채팅방이 존재합니다."},
+                status=status.HTTP_409_CONFLICT,
             )
 
-            if not created:
-                return Response(
-                    {"detail": "이미 해당 캐릭터와의 채팅방이 존재합니다."},
-                    status=status.HTTP_409_CONFLICT,
-                )
+        response_data = {
+            "room_id": room.room_id,
+            "character_id": character.id,
+            "character_name": character.name,
+            "created_at": room.created_at,
+            "message": "채팅방이 생성되었습니다.",
+        }
 
-            response_data = {
-                "room_id": room.room_id,
-                "character_id": character.id,
-                "character_name": character.name,
-                "created_at": room.created_at,
-                "message": "채팅방이 생성되었습니다.",
-            }
-
-            return Response(response_data, status=status.HTTP_201_CREATED)
+        return Response(response_data, status=status.HTTP_201_CREATED)
 
 
 class RoomDetailAPIView(APIView):

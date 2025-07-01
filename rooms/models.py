@@ -23,7 +23,7 @@ class Room(models.Model):
         verbose_name_plural = "채팅방들"
 
     def __str__(self):
-        return f"{self.title} ({self.character_id})"
+        return f"{self.room_id} ({self.character_id})"
 
 
 class Chat(models.Model):

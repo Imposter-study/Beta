@@ -26,6 +26,7 @@ class RoomSerializer(serializers.ModelSerializer):
             "last_message",
             "created_at",
             "updated_at",
+            "fixation",
         ]
         read_only_fields = ["room_id", "created_at", "updated_at"]
 

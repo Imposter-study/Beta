@@ -18,6 +18,8 @@ from .serializers import (
     CharacterSearchSerializer,
     CharacterBaseSerializer,
 )
+import re
+from django.db.models import Q
 
 
 @extend_schema_view(
@@ -132,14 +134,17 @@ class CharacterDetailAPIView(APIView):
 
 
 # __icontains 특정 문자열이 포함 필터 (대소문자 구분x), __contains: 대소문자구별 문자포함
+# distinct(): 중복검색 제거 ( 하나의 해시태그로 검색시 한캐릭이 여러번 검색될수있는 문제 )
+# 현재 해시태그 #안에는 띄어쓰기가 없어야함
 class CharacterSearchAPIView(APIView):
     @extend_schema(
+        summary="이름,해시태그로 캐릭터 검색",
         parameters=[
             OpenApiParameter(
                 name="name",
                 type=str,
                 location="query",
-                description="검색할 캐릭터 이름 일부 문자열 (대소문자 구분 없이 포함 검색)",
+                description="캐릭터 이름 또는 해시태그로 캐릭터검색",
                 required=True,
             ),
         ],
@@ -147,22 +152,44 @@ class CharacterSearchAPIView(APIView):
             200: CharacterSearchSerializer(many=True),
             404: OpenApiResponse(description="해당 이름의 캐릭터가 없습니다."),
         },
-        description="이름 일부 문자열 포함하는 공개 캐릭터 목록 조회",
-        tags=["Character"],
+        description="이름 일부, 해시태그 포함하는 공개 캐릭터 목록 조회",
     )
     def get(self, request):
-        name = request.query_params.get("name", "")
-        if len(name) < 1:
+        query = request.query_params.get("name", "").strip()
+
+        if not query:
             return Response(
-                {"message": "한글 이상 검색어로 입력해주세요"},
+                {"message": "한 글자 이상 입력해주세요."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        characters = Character.objects.filter(
-            name__icontains=name, is_character_public=True
-        )
+        # 해시태그 검색 ( 정규식으로 # 붙은 이름 추출 )
+        if query.startswith("#"):
+            tag_names = re.findall(r"#(\S+)", query)
+
+            if not tag_names:
+                return Response(
+                    {"message": "유효한 해시태그를 입력해주세요."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            q = Q()
+            for tag in tag_names:
+                q |= Q(hashtags__tag_name__iexact=tag)
+
+            characters = (
+                Character.objects.filter(is_character_public=True).filter(q).distinct()
+            )
+
+        # 이름 검색
+        else:
+            characters = Character.objects.filter(
+                is_character_public=True, name__icontains=query
+            )
+
         if not characters.exists():
-            raise Http404("해당 이름의 캐릭터가 없습니다.")
+            raise Http404("해당 조건의 캐릭터가 없습니다.")
+
         serializer = CharacterSearchSerializer(
             characters, many=True, context={"request": request}
         )

@@ -71,12 +71,23 @@ class ChatService:
             prompt += f"캐릭터 정보: {character.character_info}\n\n"
 
         if character.example_situation:
-            prompt += f"예시 상황: {character.example_situation}\n\n"
+            example_texts = []
+            for inner_list in character.example_situation:
+                if isinstance(inner_list, list):
+                    for item_dict in inner_list:
+                        if isinstance(item_dict, dict):
+                            role = item_dict.get("role", "")
+                            message = item_dict.get("message", "")
+                            if role and message:
+                                example_texts.append(f"{role}: {message}")
+
+            if example_texts:
+                example_text = "\n".join(example_texts)
+                prompt += f"예시 상황:\n{example_text}\n\n"
 
         if character.presentation:
             prompt += f"말투/스타일: {character.presentation}\n\n"
 
-        # 기본 지침 추가
         prompt += """대화 지침:
         - 위에 명시된 캐릭터의 성격과 특징을 일관되게 유지하세요
         - 자연스럽고 몰입감 있는 대화를 이어가세요

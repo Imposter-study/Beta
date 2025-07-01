@@ -1,19 +1,20 @@
+from django.conf import settings
 from django.shortcuts import get_object_or_404
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.conf import settings
-import requests
-from allauth.socialaccount.providers.kakao import views as kakao_view
-from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from rest_framework.parsers import MultiPartParser, FormParser
+
+# 소셜 로그인 관련
 from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.models import SocialAccount
-from django.http import JsonResponse
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from allauth.socialaccount.providers.kakao import views as kakao_view
 from allauth.socialaccount.providers.google import views as google_view
 
-from rest_framework.parsers import MultiPartParser, FormParser
 from .models import User
 from .serializers import (
     SignUpSerializer,
@@ -23,6 +24,7 @@ from .serializers import (
     PasswordChangeSerializer,
     DeactivateAccountSerializer,
 )
+
 from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,

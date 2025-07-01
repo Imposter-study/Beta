@@ -39,14 +39,12 @@ class CharacterBaseSerializer(serializers.ModelSerializer):
     )
     hashtags = HashtagSerializer(many=True, read_only=True)
     creator_nickname = serializers.SerializerMethodField()
-    room_numbers = serializers.SerializerMethodField()
 
     class Meta:
         model = Character
         fields = [
             "character_id",
             "creator_nickname",
-            "room_numbers",
             "name",
             "character_image",
             "title",
@@ -63,15 +61,6 @@ class CharacterBaseSerializer(serializers.ModelSerializer):
     def get_creator_nickname(self, obj):
         return obj.user.nickname
 
-    def get_room_numbers(self, obj):
-        room_ids = []  
-        rooms = obj.rooms.all()  
-
-        for room in rooms:
-            room_ids.append(str(room.room_id))  
-
-        return room_ids
-
 
 # 내가 캐릭터 생성자일때
 class CharacterSerializer(CharacterBaseSerializer):
@@ -79,6 +68,7 @@ class CharacterSerializer(CharacterBaseSerializer):
     is_description_public = serializers.BooleanField()
     is_example_public = serializers.BooleanField()
     hashtags = HashtagSerializer(many=True, required=False)
+    room_number = serializers.SerializerMethodField()
 
     class Meta(CharacterBaseSerializer.Meta):
         fields = CharacterBaseSerializer.Meta.fields + [
@@ -86,6 +76,7 @@ class CharacterSerializer(CharacterBaseSerializer):
             "is_description_public",
             "is_example_public",
             "hashtags",
+            "room_number",
         ]
 
     def to_representation(self, instance):
@@ -100,6 +91,20 @@ class CharacterSerializer(CharacterBaseSerializer):
                 representation["example_situation"] = []
 
         return representation
+
+    #방번호 : 로그인시 캐릭터조회, 캐릭터와 대화했을경우 대화방번호 출력
+    def get_room_number(self, obj):
+        request = self.context.get("request")
+
+        if request is None:
+            return None
+        if not request.user.is_authenticated:
+            return None
+
+        room = obj.rooms.filter(user=request.user).first()
+        if room:
+            return str(room.room_id)
+        return None
 
     # 캐릭터 생성시 해시태그
     def create(self, validated_data):

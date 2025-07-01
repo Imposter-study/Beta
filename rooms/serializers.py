@@ -11,6 +11,7 @@ from characters.models import ConversationHistory
 
 
 class RoomSerializer(serializers.ModelSerializer):
+    character_id = serializers.SerializerMethodField()
     character_title = serializers.SerializerMethodField()
     character_name = serializers.SerializerMethodField()
     character_image = serializers.SerializerMethodField()
@@ -20,6 +21,7 @@ class RoomSerializer(serializers.ModelSerializer):
         model = Room
         fields = [
             "room_id",
+            "character_id",
             "character_title",
             "character_name",
             "character_image",
@@ -28,7 +30,20 @@ class RoomSerializer(serializers.ModelSerializer):
             "updated_at",
             "fixation",
         ]
-        read_only_fields = ["room_id", "created_at", "updated_at"]
+        read_only_fields = [
+            "room_id",
+            "character_id",
+            "character_title",
+            "character_name",
+            "character_image",
+            "last_message",
+            "created_at",
+            "updated_at",
+            "fixation",
+        ]
+
+    def get_character_id(self, obj):
+        return obj.character_id.pk
 
     def get_character_title(self, obj):
         return obj.character_id.title

@@ -44,7 +44,7 @@ class CharacterBaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Character
         fields = [
-            "character",
+            "character_id",
             "creator_nickname",
             "room_numbers",
             "name",

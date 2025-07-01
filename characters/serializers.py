@@ -42,6 +42,7 @@ class CharacterBaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Character
         fields = [
+            "character",
             "name",
             "character_image",
             "title",

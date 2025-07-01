@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate
-
+from characters.serializers import UserProfileCharacterSerializer
 
 User = get_user_model()
 
@@ -92,29 +92,34 @@ class DeactivateAccountSerializer(serializers.Serializer):
         return value
 
 
-# 내가 나의 프로필 조회,수정
-# TODO : 제타 아이디와 닉네임 고민
-class MyProfileSerializer(serializers.ModelSerializer):
-    profile_picture = serializers.ImageField(
-        required=False
-    )  # 명시적으로 선언해주면 Swagger가 더 잘 인식함
+# 타인 프로필 조회
+class UserProfileSerializer(serializers.ModelSerializer):
+    profile_picture = serializers.ImageField(required=False)
+    characters = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
+            "username",
             "nickname",
-            "birth_date",
-            "gender",
             "introduce",
             "profile_picture",
+            "characters",
         ]
 
+    def get_characters(self, obj):
+        queryset = obj.characters.filter(is_character_public=True)
+        return UserProfileCharacterSerializer(queryset, many=True).data
 
-# 타인의 프로필을 볼때
-# TODO: 타인의 프로필을 볼때 만든 캐릭터 필드 추가
-class UserProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = [
-            "nickname",
+
+# 내 프로필 조회
+class MyProfileSerializer(UserProfileSerializer):
+    class Meta(UserProfileSerializer.Meta):
+        fields = UserProfileSerializer.Meta.fields + [
+            "birth_date",
+            "gender",
         ]
+
+    def get_characters(self, obj):
+        queryset = obj.characters.all()
+        return UserProfileCharacterSerializer(queryset, many=True).data

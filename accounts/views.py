@@ -1,19 +1,23 @@
+
+from django.conf import settings
 from django.shortcuts import get_object_or_404, render
+from django.http import JsonResponse, HttpResponse
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.conf import settings
-import requests
-from allauth.socialaccount.providers.kakao import views as kakao_view
-from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from rest_framework.parsers import MultiPartParser, FormParser
+
+# 소셜 로그인 관련
 from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.models import SocialAccount
-from django.http import JsonResponse, HttpResponse
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from allauth.socialaccount.providers.kakao import views as kakao_view
+
 from allauth.socialaccount.providers.google import views as google_view
 
-from rest_framework.parsers import MultiPartParser, FormParser
 from .models import User
 from .serializers import (
     SignUpSerializer,
@@ -23,6 +27,7 @@ from .serializers import (
     PasswordChangeSerializer,
     DeactivateAccountSerializer,
 )
+
 from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
@@ -113,7 +118,7 @@ class UserProfileView(APIView):
 class LoginView(APIView):
     @extend_schema(
         summary="로그인",
-        description="아이디와 비밀번호를 입력해주세요(JWT 토큰 반환)",
+        description="아이디와 비밀번호를 입력해주세요(JWT 토큰, 닉네임 반환)",
         request=LoginSerializer,
         responses={
             200: OpenApiResponse(description="로그인 성공"),
@@ -131,7 +136,9 @@ class LoginView(APIView):
                 {
                     "refresh": str(refresh),
                     "access": str(refresh.access_token),
-                }
+                    "nickname": user.nickname,
+                },
+                status=status.HTTP_200_OK,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -276,6 +283,7 @@ class KakaoLogin(SocialLoginView):
 
         # 기존 회원이면 토큰 포함 정상 로그인 응답
         response.data["is_signup"] = True
+        response.data["nickname"] = user.nickname
         response.data["access"] = access_token
         response.data["refresh"] = refresh_token
         return response
@@ -334,6 +342,7 @@ class GoogleLogin(SocialLoginView):
 
         # 기존 회원이면 토큰 포함 정상 로그인 응답
         response.data["is_signup"] = True
+        response.data["nickname"] = user.nickname
         response.data["access"] = access_token
         response.data["refresh"] = refresh_token
         return response

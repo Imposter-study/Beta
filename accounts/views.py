@@ -250,7 +250,35 @@ class KakaoLogin(SocialLoginView):
         tags=["소셜 로그인"],
     )
     def post(self, request, *args, **kwargs):
-        return super().post(request, *args, **kwargs)
+        response = super().post(request, *args, **kwargs)
+
+        user = request.user
+        social_account = SocialAccount.objects.filter(
+            user=user, provider="kakao"
+        ).first()
+        # JWT 토큰 발급
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
+
+        # 프로필 정보가 아직 없는 경우
+        if user.gender == "O" or not user.birth_date:
+            return Response(
+                {
+                    "is_signup": False,
+                    "kakao_id": social_account.uid,
+                    "nickname": user.nickname,
+                    "access": access_token,
+                    "refresh": refresh_token,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        # 기존 회원이면 토큰 포함 정상 로그인 응답
+        response.data["is_signup"] = True
+        response.data["access"] = access_token
+        response.data["refresh"] = refresh_token
+        return response
 
 
 # 구글 소셜 로그인
@@ -273,4 +301,33 @@ class GoogleLogin(SocialLoginView):
         tags=["소셜 로그인"],
     )
     def post(self, request, *args, **kwargs):
-        return super().post(request, *args, **kwargs)
+        response = super().post(request, *args, **kwargs)
+
+        user = request.user
+        social_account = SocialAccount.objects.filter(
+            user=user, provider="google"
+        ).first()
+
+        # JWT 토큰 발급
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
+
+        # 프로필 정보가 아직 없는 경우
+        if user.gender == "O" or not user.birth_date:
+            return Response(
+                {
+                    "is_signup": False,
+                    "google_id": social_account.uid,
+                    "nickname": user.nickname,
+                    "access": access_token,
+                    "refresh": refresh_token,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        # 기존 회원이면 토큰 포함 정상 로그인 응답
+        response.data["is_signup"] = True
+        response.data["access"] = access_token
+        response.data["refresh"] = refresh_token
+        return response

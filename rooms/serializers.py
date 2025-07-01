@@ -43,17 +43,17 @@ class RoomSerializer(serializers.ModelSerializer):
         ]
 
     def get_character_id(self, obj):
-        return obj.character_id.pk
+        return obj.character.pk
 
     def get_character_title(self, obj):
-        return obj.character_id.title
+        return obj.character.title
 
     def get_character_name(self, obj):
-        return obj.character_id.name
+        return obj.character.name
 
     def get_character_image(self, obj):
-        if obj.character_id.character_image:
-            return obj.character_id.character_image.url
+        if obj.character.character_image:
+            return obj.character.character_image.url
         return None
 
     def get_last_message(self, obj):
@@ -69,7 +69,7 @@ class RoomCreateSerializer(serializers.Serializer):
 
 
 class RoomDetailSerializer(serializers.ModelSerializer):
-    character_title = serializers.CharField(source="character_id.title", read_only=True)
+    character_title = serializers.CharField(source="character.title", read_only=True)
     chats = serializers.SerializerMethodField()
 
     class Meta:
@@ -90,7 +90,7 @@ class ChatDetailSerializer(serializers.ModelSerializer):
 
     def get_name(self, obj):
         room = obj.room
-        return room.character_id.name if obj.role == "ai" else room.user.username
+        return room.character.name if obj.role == "ai" else room.user.username
 
 
 class ChatRequestSerializer(serializers.Serializer):

@@ -39,7 +39,7 @@ class RoomAPIView(APIView):
     def get(self, request):
         rooms = (
             Room.objects.filter(user=request.user)
-            .select_related("character_id")
+            .select_related("character")
             .prefetch_related(
                 Prefetch(
                     "chats",
@@ -77,7 +77,7 @@ class RoomAPIView(APIView):
 
         room, created = Room.objects.get_or_create(
             user=user,
-            character_id=character,
+            character=character,
         )
 
         if not created:
@@ -194,7 +194,7 @@ class ChatAPIView(APIView):
         user_message = serializer.validated_data["message"]
 
         room = get_object_or_404(Room, room_id=room_id, user=request.user)
-        character = room.character_id
+        character = room.character
 
         chat_service = ChatService()
 
@@ -208,7 +208,7 @@ class ChatAPIView(APIView):
 
         response_data = {
             "room_id": str(room.room_id),
-            "user_id": room.user.id,
+            "user_id": room.user.pk,
             "character_id": character.pk,
             "character_name": character.name,
             "user_message": user_message,
@@ -403,7 +403,7 @@ class ChatRegenerateAPIView(APIView):
 
         response_data = {
             "room_id": room.room_id,
-            "character_name": room.character_id.name,
+            "character_name": room.character.name,
             "regenerated_response": ai_response,
             "created_at": ai_chat_obj.created_at,
         }
@@ -437,7 +437,7 @@ class HistoryAPIView(APIView):
         room = self.get_room(room_id, request.user)
 
         conversation_histories = ConversationHistory.objects.filter(
-            character=room.character_id, user=request.user
+            character=room.character, user=request.user
         ).order_by("-saved_at")
 
         serializer = HistoryListSerializer(conversation_histories, many=True)
@@ -485,7 +485,7 @@ class HistoryAPIView(APIView):
         last_message = chats.last().content[:50] if chats.exists() else ""
 
         conversation_history = ConversationHistory.objects.create(
-            character=room.character_id,
+            character=room.character,
             user=request.user,
             title=title,
             chat_history=chat_history,

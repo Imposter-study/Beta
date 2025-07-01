@@ -1,4 +1,3 @@
-
 from django.conf import settings
 from django.shortcuts import get_object_or_404, render
 from django.http import JsonResponse, HttpResponse
@@ -287,7 +286,8 @@ class KakaoLogin(SocialLoginView):
         response.data["access"] = access_token
         response.data["refresh"] = refresh_token
         return response
-    
+
+
 def kakao_redirect(request):
     code = request.GET.get("code")
     if code:

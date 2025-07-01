@@ -92,7 +92,7 @@ class CharacterSerializer(CharacterBaseSerializer):
 
         return representation
 
-    #방번호 : 로그인시 캐릭터조회, 캐릭터와 대화했을경우 대화방번호 출력
+    # 방번호 : 로그인시 캐릭터조회, 캐릭터와 대화했을경우 대화방번호 출력
     def get_room_number(self, obj):
         request = self.context.get("request")
 

@@ -12,8 +12,10 @@ from characters.models import Character
 
 class Room(models.Model):
     room_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    character_id = models.ForeignKey(Character, on_delete=models.CASCADE, related_name="rooms")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="rooms")
+    character = models.ForeignKey(
+        Character, on_delete=models.CASCADE, related_name="rooms"
+    )
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     fixation = models.BooleanField(default=False)
@@ -23,7 +25,7 @@ class Room(models.Model):
         verbose_name_plural = "채팅방들"
 
     def __str__(self):
-        return f"{self.room_id} ({self.character_id})"
+        return f"{self.room_id} ({self.character})"
 
 
 class Chat(models.Model):

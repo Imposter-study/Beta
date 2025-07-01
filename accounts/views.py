@@ -115,7 +115,7 @@ class UserProfileView(APIView):
 class LoginView(APIView):
     @extend_schema(
         summary="로그인",
-        description="아이디와 비밀번호를 입력해주세요(JWT 토큰 반환)",
+        description="아이디와 비밀번호를 입력해주세요(JWT 토큰, 닉네임 반환)",
         request=LoginSerializer,
         responses={
             200: OpenApiResponse(description="로그인 성공"),
@@ -133,7 +133,9 @@ class LoginView(APIView):
                 {
                     "refresh": str(refresh),
                     "access": str(refresh.access_token),
-                }
+                    "nickname": user.nickname,
+                },
+                status=status.HTTP_200_OK,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

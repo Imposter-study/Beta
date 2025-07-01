@@ -232,7 +232,7 @@ class CharacterScrapAPIView(APIView):
     },
 )
 # 내가 스크랩(팔로우한 캐릭터 조회)
-class MyCharactersAPIView(APIView):
+class MyScrapCharactersAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -241,6 +241,27 @@ class MyCharactersAPIView(APIView):
             "-created_at"
         )
         serializer = CharacterBaseSerializer(
+            characters, many=True, context={"request": request}
+        )
+        return Response(serializer.data)
+
+
+@extend_schema(
+    summary="내가 생성한 모든 캐릭터 조회",
+    description="내가 만든 모든 캐릭터 조회",
+    responses={
+        200: CharacterBaseSerializer(many=True),
+        401: OpenApiResponse(description="로그인이 필요합니다."),
+    },
+)
+# 내가 생성한 캐릭터들 조회
+class MyCreateChracterAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        characters = user.characters.all().order_by("-created_at")
+        serializer = CharacterSerializer(
             characters, many=True, context={"request": request}
         )
         return Response(serializer.data)

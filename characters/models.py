@@ -15,10 +15,10 @@ class Hashtag(models.Model):
         return self.tag_name
 
 
-# 캐릭터
+# 캐릭터 
 class Character(models.Model):
-    character = models.AutoField(primary_key=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="characters")
+    character_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="characters", null=True)
 
     # 필수
     title = models.CharField(max_length=20)

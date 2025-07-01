@@ -15,7 +15,7 @@ class Hashtag(models.Model):
         return self.tag_name
 
 
-# 캐릭터
+# 캐릭터 -> 필드명 id , on_delete=models.CASCADE 삭제
 class Character(models.Model):
     character = models.AutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="characters")

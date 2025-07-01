@@ -38,11 +38,13 @@ class CharacterBaseSerializer(serializers.ModelSerializer):
         allow_empty=True,
     )
     hashtags = HashtagSerializer(many=True, read_only=True)
+    creator_nickname = serializers.SerializerMethodField()
 
     class Meta:
         model = Character
         fields = [
             "character",
+            "creator_nickname",
             "name",
             "character_image",
             "title",
@@ -55,6 +57,9 @@ class CharacterBaseSerializer(serializers.ModelSerializer):
             "hashtags",
         ]
         read_only_fields = ["user"]
+
+    def get_creator_nickname(self, obj):
+        return obj.user.nickname
 
 
 # 내가 캐릭터 생성자일때

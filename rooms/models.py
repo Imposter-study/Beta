@@ -16,6 +16,7 @@ class Room(models.Model):
     character_id = models.ForeignKey(Character, on_delete=models.CASCADE, related_name="rooms")
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
+    fixation = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = "채팅방"

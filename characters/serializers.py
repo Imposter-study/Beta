@@ -39,12 +39,14 @@ class CharacterBaseSerializer(serializers.ModelSerializer):
     )
     hashtags = HashtagSerializer(many=True, read_only=True)
     creator_nickname = serializers.SerializerMethodField()
+    room_numbers = serializers.SerializerMethodField()
 
     class Meta:
         model = Character
         fields = [
             "character",
             "creator_nickname",
+            "room_numbers",
             "name",
             "character_image",
             "title",
@@ -60,6 +62,15 @@ class CharacterBaseSerializer(serializers.ModelSerializer):
 
     def get_creator_nickname(self, obj):
         return obj.user.nickname
+
+    def get_room_numbers(self, obj):
+        room_ids = []  
+        rooms = obj.rooms.all()  
+
+        for room in rooms:
+            room_ids.append(str(room.room_id))  
+
+        return room_ids
 
 
 # 내가 캐릭터 생성자일때

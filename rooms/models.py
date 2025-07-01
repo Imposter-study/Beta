@@ -8,7 +8,7 @@ from characters.models import Character
 class Room(models.Model):
     room_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     user = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
-    character_id = models.ForeignKey(Character, on_delete=models.CASCADE, default=1)
+    character_id = models.ForeignKey(Character, on_delete=models.CASCADE, default=1, related_name="rooms")
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 

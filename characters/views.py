@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import get_object_or_404
 from django.http import Http404
 from drf_spectacular.utils import (
@@ -43,6 +44,7 @@ from django.db.models import Q
 )
 class CharacterAPIView(APIView):
     authentication_classes = [JWTAuthentication]
+    parser_classes = [MultiPartParser, FormParser]
 
     def get_permissions(self):
         if self.request.method == "GET":
@@ -103,6 +105,7 @@ class CharacterAPIView(APIView):
 class CharacterDetailAPIView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     def get_object(self, pk):
         character = get_object_or_404(Character, pk=pk)

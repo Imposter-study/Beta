@@ -84,6 +84,7 @@ class RoomDetailSerializer(serializers.ModelSerializer):
 
 
 class ChatDetailSerializer(serializers.ModelSerializer):
+    chat_id = serializers.CharField(source='id', read_only=True)
     name = serializers.SerializerMethodField()
 
     class Meta:

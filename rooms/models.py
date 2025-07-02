@@ -34,7 +34,7 @@ class Chat(models.Model):
         ("ai", "AI"),
     ]
 
-    chat_id = models.AutoField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="chats")
     content = models.TextField()
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)

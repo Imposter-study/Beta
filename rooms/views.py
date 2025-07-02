@@ -241,7 +241,7 @@ class ChatMessageDetailView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         room = get_object_or_404(Room, uuid=room_uuid, user=request.user)
-        chat = get_object_or_404(Chat, chat_id=chat_id)
+        chat = get_object_or_404(Chat, id=chat_id)
 
         if chat.room != room:
             return Response(
@@ -277,13 +277,13 @@ class ChatMessageDetailView(APIView):
     def delete(self, request, room_uuid, chat_id):
         room = get_object_or_404(Room, uuid=room_uuid, user=request.user)
 
-        if not Chat.objects.filter(chat_id=chat_id, room=room).exists():
+        if not Chat.objects.filter(id=chat_id, room=room).exists():
             return Response(
                 {"error": "존재하지 않는 chat_id입니다."},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        chats_to_delete = Chat.objects.filter(room=room, chat_id__gte=chat_id)
+        chats_to_delete = Chat.objects.filter(room=room, id__gte=chat_id)
         deleted_count = chats_to_delete.count()
         chats_to_delete.delete()
 

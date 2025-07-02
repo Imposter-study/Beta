@@ -288,17 +288,19 @@ class ChatMessageDetailView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        chats_to_delete = Chat.objects.filter(room=room, id__gte=chat_id)
+        base_queryset = Chat.objects.filter(room=room, id__gte=chat_id)
+        chat_ids = list(base_queryset.values_list("id", flat=True))
 
         if target_chat.regeneration_group is not None:
-            regeneration_group_chats = Chat.objects.filter(
+            regeneration_queryset = Chat.objects.filter(
                 room=room, regeneration_group=target_chat.regeneration_group
             )
+            regeneration_ids = list(regeneration_queryset.values_list("id", flat=True))
+            chat_ids += regeneration_ids
 
-            chats_to_delete = chats_to_delete.union(regeneration_group_chats)
+        chat_ids = list(set(chat_ids))
 
-        deleted_count = chats_to_delete.count()
-        chats_to_delete.delete()
+        deleted_count, _ = Chat.objects.filter(id__in=chat_ids).delete()
 
         return Response(
             {"message": f"{deleted_count}개의 채팅이 삭제되었습니다."},
@@ -517,6 +519,12 @@ class HistoryAPIView(APIView):
                 {
                     "content": chat.content,
                     "role": chat.role,
+                    "is_main": chat.is_main,
+                    "regeneration_group": (
+                        str(chat.regeneration_group)
+                        if chat.regeneration_group
+                        else None
+                    ),
                     "timestamp": chat.created_at.isoformat(),
                 }
             )
@@ -666,6 +674,8 @@ class HistoryDetailAPIView(APIView):
                 room=room,
                 content=chat_data["content"],
                 role=chat_data["role"],
+                is_main=chat_data.get("is_main", True),
+                regeneration_group=chat_data.get("regeneration_group", None),
                 created_at=chat_data["timestamp"],
             )
             loaded_chats.append(chat)

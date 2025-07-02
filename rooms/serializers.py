@@ -11,6 +11,7 @@ from characters.models import ConversationHistory
 
 
 class RoomSerializer(serializers.ModelSerializer):
+    room_id = serializers.CharField(source='uuid', read_only=True)
     character_id = serializers.SerializerMethodField()
     character_title = serializers.SerializerMethodField()
     character_name = serializers.SerializerMethodField()
@@ -20,7 +21,7 @@ class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
         fields = [
-            "uuid",
+            "room_id",
             "character_id",
             "character_title",
             "character_name",
@@ -31,7 +32,7 @@ class RoomSerializer(serializers.ModelSerializer):
             "fixation",
         ]
         read_only_fields = [
-            "uuid",
+            "room_id",
             "character_id",
             "character_title",
             "character_name",
@@ -69,12 +70,13 @@ class RoomCreateSerializer(serializers.Serializer):
 
 
 class RoomDetailSerializer(serializers.ModelSerializer):
+    room_id = serializers.CharField(source='uuid', read_only=True)
     character_title = serializers.CharField(source="character.title", read_only=True)
     chats = serializers.SerializerMethodField()
 
     class Meta:
         model = Room
-        fields = ["uuid", "character_title", "created_at", "updated_at", "chats"]
+        fields = ["room_id", "character_title", "created_at", "updated_at", "chats"]
 
     def get_chats(self, obj):
         chats = Chat.objects.filter(room=obj).order_by("created_at")

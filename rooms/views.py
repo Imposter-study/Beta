@@ -14,12 +14,13 @@ from drf_spectacular.utils import OpenApiResponse, extend_schema
 from characters.models import Character, ConversationHistory
 from .models import Chat, Room
 from .serializers import (
+    RoomSerializer,
+    RoomCreateSerializer,
+    RoomDetailSerializer,
     ChatRequestSerializer,
     HistoryListSerializer,
     HistoryTitleSerializer,
-    RoomCreateSerializer,
-    RoomDetailSerializer,
-    RoomSerializer,
+    HistoryDetailSerializer,
 )
 from .services import ChatService
 
@@ -516,6 +517,24 @@ class HistoryDetailAPIView(APIView):
             raise Http404("존재하지 않는 대화 내역이거나 접근 권한이 없습니다.")
 
     @extend_schema(
+        summary="저장된 대화 내역 상세 조회",
+        description="저장된 대화 내역의 상세 정보를 조회합니다.",
+        responses={
+            200: OpenApiResponse(
+                description="대화 내역 상세 조회 성공",
+                response=HistoryDetailSerializer,
+            ),
+            401: OpenApiResponse(description="인증되지 않은 사용자"),
+            404: OpenApiResponse(description="존재하지 않는 대화 내역"),
+        },
+        tags=["rooms/history"],
+    )
+    def get(self, request, room_uuid, history_id):
+        conversation_history = self.get_conversation_history(history_id, request.user)
+        serializer = HistoryDetailSerializer(conversation_history)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @extend_schema(
         summary="저장된 대화 내역 제목 수정",
         description="저장된 대화 내역의 제목을 수정합니다.",
         request=HistoryTitleSerializer,
@@ -577,6 +596,9 @@ class HistoryDetailAPIView(APIView):
             401: OpenApiResponse(description="인증되지 않은 사용자"),
             403: OpenApiResponse(description="접근 권한이 없음"),
             404: OpenApiResponse(description="존재하지 않는 채팅방 또는 대화 내역"),
+            409: OpenApiResponse(
+                description="채팅방과 대화 내역의 캐릭터가 일치하지 않음"
+            ),
         },
         tags=["rooms/history"],
     )
@@ -586,6 +608,16 @@ class HistoryDetailAPIView(APIView):
         conversation_history = get_object_or_404(
             ConversationHistory, history_id=history_id, user=request.user
         )
+
+        if room.character != conversation_history.character:
+            return Response(
+                {
+                    "error": "채팅방과 대화 내역의 캐릭터가 일치하지 않습니다.",
+                    "room_character": room.character.name,
+                    "history_character": conversation_history.character.name,
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
 
         deleted_count = Chat.objects.filter(room=room).count()
         Chat.objects.filter(room=room).delete()
@@ -602,7 +634,7 @@ class HistoryDetailAPIView(APIView):
 
         return Response(
             {
-                "message": "대화 내역이 불러오기 완료.",
+                "message": "대화 내역 불러오기 완료.",
                 "deleted_count": deleted_count,
                 "loaded_count": len(loaded_chats),
                 "history_title": conversation_history.title,

@@ -11,7 +11,7 @@ from characters.models import ConversationHistory
 
 
 class RoomSerializer(serializers.ModelSerializer):
-    room_id = serializers.CharField(source='uuid', read_only=True)
+    room_id = serializers.CharField(source="uuid", read_only=True)
     character_id = serializers.SerializerMethodField()
     character_title = serializers.SerializerMethodField()
     character_name = serializers.SerializerMethodField()
@@ -21,17 +21,6 @@ class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
         fields = [
-            "room_id",
-            "character_id",
-            "character_title",
-            "character_name",
-            "character_image",
-            "last_message",
-            "created_at",
-            "updated_at",
-            "fixation",
-        ]
-        read_only_fields = [
             "room_id",
             "character_id",
             "character_title",
@@ -70,7 +59,7 @@ class RoomCreateSerializer(serializers.Serializer):
 
 
 class RoomDetailSerializer(serializers.ModelSerializer):
-    room_id = serializers.CharField(source='uuid', read_only=True)
+    room_id = serializers.CharField(source="uuid", read_only=True)
     character_title = serializers.CharField(source="character.title", read_only=True)
     chats = serializers.SerializerMethodField()
 
@@ -84,7 +73,7 @@ class RoomDetailSerializer(serializers.ModelSerializer):
 
 
 class ChatDetailSerializer(serializers.ModelSerializer):
-    chat_id = serializers.CharField(source='id', read_only=True)
+    chat_id = serializers.CharField(source="id", read_only=True)
     name = serializers.SerializerMethodField()
 
     class Meta:
@@ -119,6 +108,23 @@ class HistoryListSerializer(serializers.ModelSerializer):
             return f"{int(time_diff.total_seconds() / 3600)}시간 전"
         else:
             return obj.saved_at.strftime("%Y-%m-%d")
+
+
+class HistoryDetailSerializer(serializers.ModelSerializer):
+    character_name = serializers.CharField(source="character.name", read_only=True)
+    character_id = serializers.UUIDField(
+        source="character.character_id", read_only=True
+    )
+
+    class Meta:
+        model = ConversationHistory
+        fields = [
+            "history_id",
+            "title",
+            "character_id",
+            "character_name",
+            "chat_history",
+        ]
 
 
 class HistoryTitleSerializer(serializers.Serializer):

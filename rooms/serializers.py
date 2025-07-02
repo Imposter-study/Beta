@@ -20,7 +20,7 @@ class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
         fields = [
-            "room_id",
+            "uuid",
             "character_id",
             "character_title",
             "character_name",
@@ -31,7 +31,7 @@ class RoomSerializer(serializers.ModelSerializer):
             "fixation",
         ]
         read_only_fields = [
-            "room_id",
+            "uuid",
             "character_id",
             "character_title",
             "character_name",
@@ -74,7 +74,7 @@ class RoomDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Room
-        fields = ["room_id", "character_title", "created_at", "updated_at", "chats"]
+        fields = ["uuid", "character_title", "created_at", "updated_at", "chats"]
 
     def get_chats(self, obj):
         chats = Chat.objects.filter(room=obj).order_by("created_at")

@@ -87,7 +87,7 @@ class RoomAPIView(APIView):
             )
 
         response_data = {
-            "room_id": room.room_id,
+            "room_id": room.uuid,
             "character_id": character.pk,
             "character_name": character.name,
             "created_at": room.created_at,
@@ -100,8 +100,8 @@ class RoomAPIView(APIView):
 class RoomDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get_room(self, room_id, user):
-        room = get_object_or_404(Room, room_id=room_id)
+    def get_room(self, room_uuid, user):
+        room = get_object_or_404(Room, uuid=room_uuid)
 
         if room.user != user:
             raise PermissionDenied("해당 채팅방에 대한 접근 권한이 없습니다.")
@@ -119,8 +119,8 @@ class RoomDetailAPIView(APIView):
         },
         tags=["rooms/room"],
     )
-    def get(self, request, room_id):
-        room = self.get_room(room_id, request.user)
+    def get(self, request, room_uuid):
+        room = self.get_room(room_uuid, request.user)
 
         serializer = RoomDetailSerializer(room)
 
@@ -137,8 +137,8 @@ class RoomDetailAPIView(APIView):
         },
         tags=["rooms/room"],
     )
-    def patch(self, request, room_id):
-        room = self.get_room(room_id, request.user)
+    def patch(self, request, room_uuid):
+        room = self.get_room(room_uuid, request.user)
 
         room.fixation = not room.fixation
         room.save()
@@ -159,8 +159,8 @@ class RoomDetailAPIView(APIView):
         },
         tags=["rooms/room"],
     )
-    def delete(self, request, room_id):
-        room = self.get_room(room_id, request.user)
+    def delete(self, request, room_uuid):
+        room = self.get_room(room_uuid, request.user)
 
         room.delete()
 
@@ -185,7 +185,7 @@ class ChatAPIView(APIView):
         },
         tags=["rooms/message"],
     )
-    def post(self, request, room_id):
+    def post(self, request, room_uuid):
         serializer = ChatRequestSerializer(data=request.data)
 
         if not serializer.is_valid():
@@ -193,7 +193,7 @@ class ChatAPIView(APIView):
 
         user_message = serializer.validated_data["message"]
 
-        room = get_object_or_404(Room, room_id=room_id, user=request.user)
+        room = get_object_or_404(Room, uuid=room_uuid, user=request.user)
         character = room.character
 
         chat_service = ChatService()
@@ -207,7 +207,7 @@ class ChatAPIView(APIView):
         ai_chat_obj = chat_service.save_chat(room, ai_response, "ai")
 
         response_data = {
-            "room_id": str(room.room_id),
+            "room_id": str(room.uuid),
             "user_id": room.user.pk,
             "character_id": character.pk,
             "character_name": character.name,
@@ -235,12 +235,12 @@ class ChatMessageDetailView(APIView):
         },
         tags=["rooms/message"],
     )
-    def put(self, request, room_id, chat_id):
+    def put(self, request, room_uuid, chat_id):
         serializer = ChatRequestSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        room = get_object_or_404(Room, room_id=room_id, user=request.user)
+        room = get_object_or_404(Room, uuid=room_uuid, user=request.user)
         chat = get_object_or_404(Chat, chat_id=chat_id)
 
         if chat.room != room:
@@ -274,8 +274,8 @@ class ChatMessageDetailView(APIView):
         },
         tags=["rooms/message"],
     )
-    def delete(self, request, room_id, chat_id):
-        room = get_object_or_404(Room, room_id=room_id, user=request.user)
+    def delete(self, request, room_uuid, chat_id):
+        room = get_object_or_404(Room, uuid=room_uuid, user=request.user)
 
         if not Chat.objects.filter(chat_id=chat_id, room=room).exists():
             return Response(
@@ -309,9 +309,9 @@ class ChatSuggestionAPIView(APIView):
         },
         tags=["rooms/message"],
     )
-    def post(self, request, room_id):
+    def post(self, request, room_uuid):
         try:
-            room = Room.objects.get(room_id=room_id)
+            room = Room.objects.get(uuid=room_uuid)
         except Room.DoesNotExist:
             return Response(
                 {"error": "존재하지 않는 채팅방입니다."},
@@ -368,9 +368,9 @@ class ChatRegenerateAPIView(APIView):
         },
         tags=["rooms/message"],
     )
-    def post(self, request, room_id):
+    def post(self, request, room_uuid):
         try:
-            room = Room.objects.get(room_id=room_id)
+            room = Room.objects.get(uuid=room_uuid)
         except Room.DoesNotExist:
             return Response(
                 {"error": "존재하지 않는 채팅방입니다."},
@@ -402,7 +402,7 @@ class ChatRegenerateAPIView(APIView):
         ai_chat_obj = chat_service.save_chat(room, ai_response, "ai")
 
         response_data = {
-            "room_id": room.room_id,
+            "room_id": room.uuid,
             "character_name": room.character.name,
             "regenerated_response": ai_response,
             "created_at": ai_chat_obj.created_at,
@@ -414,8 +414,8 @@ class ChatRegenerateAPIView(APIView):
 class HistoryAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get_room(self, room_id, user):
-        room = get_object_or_404(Room, room_id=room_id)
+    def get_room(self, room_uuid, user):
+        room = get_object_or_404(Room, uuid=room_uuid)
 
         if room.user != user:
             raise PermissionDenied("해당 채팅방에 대한 접근 권한이 없습니다.")
@@ -433,8 +433,8 @@ class HistoryAPIView(APIView):
         },
         tags=["rooms/history"],
     )
-    def get(self, request, room_id):
-        room = self.get_room(room_id, request.user)
+    def get(self, request, room_uuid):
+        room = self.get_room(room_uuid, request.user)
 
         conversation_histories = ConversationHistory.objects.filter(
             character=room.character, user=request.user
@@ -456,14 +456,14 @@ class HistoryAPIView(APIView):
         },
         tags=["rooms/history"],
     )
-    def post(self, request, room_id):
+    def post(self, request, room_uuid):
         serializer = HistoryTitleSerializer(data=request.data)
 
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         title = serializer.validated_data["title"]
-        room = self.get_room(room_id, request.user)
+        room = self.get_room(room_uuid, request.user)
         chats = Chat.objects.filter(room=room).order_by("created_at")
 
         if not chats.exists():
@@ -527,7 +527,7 @@ class HistoryDetailAPIView(APIView):
         },
         tags=["rooms/history"],
     )
-    def put(self, request, room_id, history_id):
+    def put(self, request, room_uuid, history_id):
         serializer = HistoryTitleSerializer(data=request.data)
 
         if not serializer.is_valid():
@@ -556,7 +556,7 @@ class HistoryDetailAPIView(APIView):
         },
         tags=["rooms/history"],
     )
-    def delete(self, request, room_id, history_id):
+    def delete(self, request, room_uuid, history_id):
         conversation_history = self.get_conversation_history(history_id, request.user)
         conversation_history.delete()
 
@@ -568,7 +568,7 @@ class HistoryDetailAPIView(APIView):
     @extend_schema(
         summary="대화 내역 불러오기",
         description=(
-            "특정 대화 내역(history_id)을 해당 채팅방(room_id)에 불러옵니다. "
+            "특정 대화 내역(history_id)을 해당 채팅방(room_uuid)에 불러옵니다. "
             "불러오기 전에 기존 대화 내역은 모두 삭제됩니다."
         ),
         responses={
@@ -580,8 +580,8 @@ class HistoryDetailAPIView(APIView):
         },
         tags=["rooms/history"],
     )
-    def patch(self, request, room_id, history_id):
-        room = get_object_or_404(Room, room_id=room_id, user=request.user)
+    def patch(self, request, room_uuid, history_id):
+        room = get_object_or_404(Room, uuid=room_uuid, user=request.user)
 
         conversation_history = get_object_or_404(
             ConversationHistory, history_id=history_id, user=request.user

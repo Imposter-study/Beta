@@ -1,3 +1,6 @@
+# Python Library
+import uuid
+
 # Third-Party Package
 from django.conf import settings
 from django.db.models import Prefetch
@@ -372,9 +375,7 @@ class ChatRegenerateAPIView(APIView):
             400: OpenApiResponse(description="잘못된 요청"),
             401: OpenApiResponse(description="인증되지 않은 사용자"),
             403: OpenApiResponse(description="접근 권한이 없음"),
-            404: OpenApiResponse(
-                description="존재하지 않는 채팅방 또는 사용자 메시지가 없음"
-            ),
+            404: OpenApiResponse(description="존재하지 않는 채팅방 또는 메시지가 없음"),
         },
         tags=["rooms/message"],
     )
@@ -393,6 +394,20 @@ class ChatRegenerateAPIView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
+        last_message = Chat.objects.filter(room=room).order_by("-created_at").first()
+
+        if not last_message:
+            return Response(
+                {"error": "재생성할 메시지가 없습니다."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if last_message.role == "user":
+            return Response(
+                {"error": "사용자 메시지는 재생성할 수 없습니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         last_user_message = (
             Chat.objects.filter(room=room, role="user").order_by("-created_at").first()
         )
@@ -409,12 +424,26 @@ class ChatRegenerateAPIView(APIView):
             room, last_user_message.content, last_user_message
         )
 
+        if last_message.regeneration_group:
+            regeneration_group_id = last_message.regeneration_group
+        else:
+            regeneration_group_id = uuid.uuid4()
+            last_message.regeneration_group = regeneration_group_id
+            last_message.save()
+
+        Chat.objects.filter(regeneration_group=regeneration_group_id).update(
+            is_main=False
+        )
+
         ai_chat_obj = chat_service.save_chat(room, ai_response, "ai")
+        ai_chat_obj.regeneration_group = regeneration_group_id
+        ai_chat_obj.save()
 
         response_data = {
             "room_id": room.uuid,
             "character_name": room.character.name,
             "regenerated_response": ai_response,
+            "regeneration_group": str(regeneration_group_id),
             "created_at": ai_chat_obj.created_at,
         }
 

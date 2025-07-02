@@ -11,7 +11,7 @@ from characters.models import ConversationHistory
 
 
 class RoomSerializer(serializers.ModelSerializer):
-    room_id = serializers.CharField(source='uuid', read_only=True)
+    room_id = serializers.CharField(source="uuid", read_only=True)
     character_id = serializers.SerializerMethodField()
     character_title = serializers.SerializerMethodField()
     character_name = serializers.SerializerMethodField()
@@ -70,7 +70,7 @@ class RoomCreateSerializer(serializers.Serializer):
 
 
 class RoomDetailSerializer(serializers.ModelSerializer):
-    room_id = serializers.CharField(source='uuid', read_only=True)
+    room_id = serializers.CharField(source="uuid", read_only=True)
     character_title = serializers.CharField(source="character.title", read_only=True)
     chats = serializers.SerializerMethodField()
 
@@ -84,7 +84,7 @@ class RoomDetailSerializer(serializers.ModelSerializer):
 
 
 class ChatDetailSerializer(serializers.ModelSerializer):
-    chat_id = serializers.CharField(source='id', read_only=True)
+    chat_id = serializers.CharField(source="id", read_only=True)
     name = serializers.SerializerMethodField()
 
     class Meta:

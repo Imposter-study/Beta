@@ -24,5 +24,7 @@ urlpatterns = [
     path("<uuid:room_uuid>/regenerate/", ChatRegenerateAPIView.as_view()),
     # 대화 내역 기능
     path("<uuid:room_uuid>/histories/", HistoryAPIView.as_view()),
-    path("<uuid:room_uuid>/histories/<uuid:history_id>/", HistoryDetailAPIView.as_view()),
+    path(
+        "<uuid:room_uuid>/histories/<uuid:history_id>/", HistoryDetailAPIView.as_view()
+    ),
 ]

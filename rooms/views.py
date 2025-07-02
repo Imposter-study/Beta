@@ -277,19 +277,28 @@ class ChatMessageDetailView(APIView):
     )
     def delete(self, request, room_uuid, chat_id):
         room = get_object_or_404(Room, uuid=room_uuid, user=request.user)
+        target_chat = Chat.objects.filter(id=chat_id, room=room).first()
 
-        if not Chat.objects.filter(id=chat_id, room=room).exists():
+        if not target_chat:
             return Response(
                 {"error": "존재하지 않는 chat_id입니다."},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
         chats_to_delete = Chat.objects.filter(room=room, id__gte=chat_id)
+
+        if target_chat.regeneration_group is not None:
+            regeneration_group_chats = Chat.objects.filter(
+                room=room, regeneration_group=target_chat.regeneration_group
+            )
+
+            chats_to_delete = chats_to_delete.union(regeneration_group_chats)
+
         deleted_count = chats_to_delete.count()
         chats_to_delete.delete()
 
         return Response(
-            {"message": "대화 내역 삭제", "deleted_count": deleted_count},
+            {"message": f"{deleted_count}개의 채팅이 삭제되었습니다."},
             status=status.HTTP_200_OK,
         )
 

@@ -267,6 +267,48 @@ class ChatMessageDetailView(APIView):
         )
 
     @extend_schema(
+        summary="regeneration_group 내 main 메시지 지정",
+        description=(
+            "지정한 chat을 regeneration_group 내 main 메시지로 설정합니다. "
+            "대화를 재생성했을 때 사용자에게 보여줄 메시지를 선택할 수 있는 기능입니다."
+        ),
+        responses={
+            200: OpenApiResponse(description="main 설정 성공"),
+            400: OpenApiResponse(description="잘못된 요청"),
+            404: OpenApiResponse(description="채팅 또는 채팅방이 존재하지 않음"),
+        },
+        tags=["rooms/message"],
+    )
+    def patch(self, request, room_uuid, chat_id):
+        room = get_object_or_404(Room, uuid=room_uuid, user=request.user)
+        chat = get_object_or_404(Chat, id=chat_id)
+
+        if chat.room != room:
+            return Response(
+                {"detail": "해당 채팅이 이 채팅방에 속하지 않습니다."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if chat.regeneration_group is None:
+            return Response(
+                {"detail": "재생성 하지 않은 메시지는 is_main을 변경할 수 없습니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        Chat.objects.filter(
+            room=room,
+            regeneration_group=chat.regeneration_group
+        ).exclude(id=chat.id).update(is_main=False)
+
+        chat.is_main = True
+        chat.save()
+
+        return Response(
+            {"message": "해당 메시지가 main 메시지로 설정되었습니다."},
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
         summary="메시지 삭제",
         description="chat_id부터 해당 채팅방의 최신 메시지까지 삭제합니다.",
         responses={

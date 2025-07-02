@@ -103,7 +103,7 @@ class CharacterSerializer(CharacterBaseSerializer):
 
         room = obj.rooms.filter(user=request.user).first()
         if room:
-            return str(room.room_id)
+            return str(room.uuid)
         return None
 
     # 캐릭터 생성시 해시태그

@@ -11,7 +11,7 @@ from characters.models import Character
 
 
 class Room(models.Model):
-    room_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="rooms")
     character = models.ForeignKey(
         Character, on_delete=models.CASCADE, related_name="rooms"
@@ -25,7 +25,7 @@ class Room(models.Model):
         verbose_name_plural = "채팅방들"
 
     def __str__(self):
-        return f"{self.room_id} ({self.character})"
+        return f"{self.uuid} ({self.character})"
 
 
 class Chat(models.Model):
@@ -34,7 +34,7 @@ class Chat(models.Model):
         ("ai", "AI"),
     ]
 
-    chat_id = models.AutoField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="chats")
     content = models.TextField()
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)

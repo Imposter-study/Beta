@@ -15,7 +15,6 @@ from characters.models import Character, ConversationHistory
 from .models import Chat, Room
 from .serializers import (
     ChatRequestSerializer,
-    ChatUpdateSerializer,
     HistoryListSerializer,
     HistoryTitleSerializer,
     RoomCreateSerializer,
@@ -40,7 +39,7 @@ class RoomAPIView(APIView):
     def get(self, request):
         rooms = (
             Room.objects.filter(user=request.user)
-            .select_related("character_id")
+            .select_related("character")
             .prefetch_related(
                 Prefetch(
                     "chats",
@@ -73,12 +72,12 @@ class RoomAPIView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         character_id = serializer.validated_data["character_id"]
-        character = get_object_or_404(Character, character=character_id)
+        character = get_object_or_404(Character, character_id=character_id)
         user = request.user
 
         room, created = Room.objects.get_or_create(
             user=user,
-            character_id=character,
+            character=character,
         )
 
         if not created:
@@ -195,7 +194,7 @@ class ChatAPIView(APIView):
         user_message = serializer.validated_data["message"]
 
         room = get_object_or_404(Room, room_id=room_id, user=request.user)
-        character = room.character_id
+        character = room.character
 
         chat_service = ChatService()
 
@@ -209,7 +208,7 @@ class ChatAPIView(APIView):
 
         response_data = {
             "room_id": str(room.room_id),
-            "user_id": room.user.id,
+            "user_id": room.user.pk,
             "character_id": character.pk,
             "character_name": character.name,
             "user_message": user_message,
@@ -226,7 +225,7 @@ class ChatMessageDetailView(APIView):
     @extend_schema(
         summary="메시지 수정",
         description="응답 메시지를 수정합니다.",
-        request=ChatUpdateSerializer,
+        request=ChatRequestSerializer,
         responses={
             200: OpenApiResponse(description="메시지 수정 성공"),
             400: OpenApiResponse(description="잘못된 요청"),
@@ -237,7 +236,7 @@ class ChatMessageDetailView(APIView):
         tags=["rooms/message"],
     )
     def put(self, request, room_id, chat_id):
-        serializer = ChatUpdateSerializer(data=request.data)
+        serializer = ChatRequestSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -264,7 +263,7 @@ class ChatMessageDetailView(APIView):
         )
 
     @extend_schema(
-        summary="매시지 삭제",
+        summary="메시지 삭제",
         description="chat_id부터 해당 채팅방의 최신 메시지까지 삭제합니다.",
         responses={
             200: OpenApiResponse(description="대화 내역 삭제 성공"),
@@ -404,7 +403,7 @@ class ChatRegenerateAPIView(APIView):
 
         response_data = {
             "room_id": room.room_id,
-            "character_name": room.character_id.name,
+            "character_name": room.character.name,
             "regenerated_response": ai_response,
             "created_at": ai_chat_obj.created_at,
         }
@@ -438,7 +437,7 @@ class HistoryAPIView(APIView):
         room = self.get_room(room_id, request.user)
 
         conversation_histories = ConversationHistory.objects.filter(
-            character=room.character_id, user=request.user
+            character=room.character, user=request.user
         ).order_by("-saved_at")
 
         serializer = HistoryListSerializer(conversation_histories, many=True)
@@ -486,7 +485,7 @@ class HistoryAPIView(APIView):
         last_message = chats.last().content[:50] if chats.exists() else ""
 
         conversation_history = ConversationHistory.objects.create(
-            character=room.character_id,
+            character=room.character,
             user=request.user,
             title=title,
             chat_history=chat_history,

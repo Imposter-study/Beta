@@ -118,7 +118,7 @@ class ChatService:
 
     def get_ai_response(self, room, user_message=None, last_user_message=None):
         try:
-            character = room.character_id
+            character = room.character
 
             if last_user_message:
                 memory = self.recreate_memory_from_history(room, last_user_message)
@@ -140,7 +140,7 @@ class ChatService:
             return "죄송합니다. 현재 응답을 생성할 수 없습니다."
 
     def get_chat_suggestion(self, room):
-        character = room.character_id
+        character = room.character
         memory = self.create_memory_from_history(room)
 
         suggestion_system_prompt = f"""당신은 '{character.name}' 캐릭터와 대화하는 사용자를 위한 추천 답변 생성기입니다.

@@ -8,6 +8,10 @@ class HashtagSerializer(serializers.ModelSerializer):
         model = Hashtag
         fields = ["tag_name"]
 
+        # 시리얼라이져의 중복검사 제외
+        extra_kwargs = {
+            "tag_name": {"validators": []}, 
+        }
 
 # 캐릭터 인트로
 class CharacterIntroSerializer(serializers.Serializer):
@@ -115,27 +119,27 @@ class CharacterSerializer(CharacterBaseSerializer):
 
         character = Character.objects.create(user=user, **validated_data)
 
-        for tag_dict in hashtag_data:
-            tag_name = tag_dict["tag_name"].lstrip("#")
+        for tag in hashtag_data:
+            tag_name = tag["tag_name"].lstrip("#")
             hashtag, created = Hashtag.objects.get_or_create(tag_name=tag_name)
             character.hashtags.add(hashtag)
 
         return character
 
     # 캐릭터 수정시 해시태그
-    def update(self, character_obj, validated_data):
+    def update(self, character, validated_data):
         hashtag_data = validated_data.pop("hashtags", None)
 
-        character_obj = super().update(character_obj, validated_data)
+        character = super().update(character, validated_data)
 
         if hashtag_data is not None:
-            character_obj.hashtags.clear()
-            for tag_dict in hashtag_data:
-                tag_name = tag_dict["tag_name"].lstrip("#")
-                hashtag, _ = Hashtag.objects.get_or_create(tag_name=tag_name)
-                character_obj.hashtags.add(hashtag)
+            character.hashtags.clear()
+            for tag in hashtag_data:
+                tag_name = tag["tag_name"].lstrip("#")
+                hashtag, created = Hashtag.objects.get_or_create(tag_name=tag_name)
+                character.hashtags.add(hashtag)
 
-        return character_obj
+        return character
 
 
 # 다른사람이 캐릭터를 조회할때

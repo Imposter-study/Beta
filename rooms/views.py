@@ -14,12 +14,13 @@ from drf_spectacular.utils import OpenApiResponse, extend_schema
 from characters.models import Character, ConversationHistory
 from .models import Chat, Room
 from .serializers import (
+    RoomSerializer,
+    RoomCreateSerializer,
+    RoomDetailSerializer,
     ChatRequestSerializer,
     HistoryListSerializer,
     HistoryTitleSerializer,
-    RoomCreateSerializer,
-    RoomDetailSerializer,
-    RoomSerializer,
+    HistoryDetailSerializer,
 )
 from .services import ChatService
 
@@ -514,6 +515,24 @@ class HistoryDetailAPIView(APIView):
             return conversation_history
         except ConversationHistory.DoesNotExist:
             raise Http404("존재하지 않는 대화 내역이거나 접근 권한이 없습니다.")
+
+    @extend_schema(
+        summary="저장된 대화 내역 상세 조회",
+        description="저장된 대화 내역의 상세 정보를 조회합니다.",
+        responses={
+            200: OpenApiResponse(
+                description="대화 내역 상세 조회 성공",
+                response=HistoryDetailSerializer,
+            ),
+            401: OpenApiResponse(description="인증되지 않은 사용자"),
+            404: OpenApiResponse(description="존재하지 않는 대화 내역"),
+        },
+        tags=["rooms/history"],
+    )
+    def get(self, request, room_uuid, history_id):
+        conversation_history = self.get_conversation_history(history_id, request.user)
+        serializer = HistoryDetailSerializer(conversation_history)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="저장된 대화 내역 제목 수정",

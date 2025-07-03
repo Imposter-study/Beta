@@ -19,6 +19,7 @@ from .models import Chat, Room
 from .serializers import (
     RoomSerializer,
     RoomCreateSerializer,
+    RoomCreateResponseSerializer,
     RoomDetailSerializer,
     ChatRequestSerializer,
     HistoryListSerializer,
@@ -62,10 +63,10 @@ class RoomAPIView(APIView):
         description="character_id를 입력하여 새로운 채팅방을 생성합니다.",
         request=RoomCreateSerializer,
         responses={
+            200: OpenApiResponse(description="이미 채팅방이 존재하는 캐릭터"),
             201: OpenApiResponse(description="채팅방 생성 성공"),
             400: OpenApiResponse(description="잘못된 요청"),
             401: OpenApiResponse(description="인증되지 않은 사용자"),
-            409: OpenApiResponse(description="이미 채팅방이 존재함"),
         },
         tags=["rooms/room"],
     )
@@ -84,21 +85,10 @@ class RoomAPIView(APIView):
             character=character,
         )
 
-        if not created:
-            return Response(
-                {"detail": "이미 해당 캐릭터와의 채팅방이 존재합니다."},
-                status=status.HTTP_409_CONFLICT,
-            )
+        response_serializer = RoomCreateResponseSerializer(room)
+        status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
 
-        response_data = {
-            "room_id": room.uuid,
-            "character_id": character.pk,
-            "character_name": character.name,
-            "created_at": room.created_at,
-            "message": "채팅방이 생성되었습니다.",
-        }
-
-        return Response(response_data, status=status.HTTP_201_CREATED)
+        return Response(response_serializer.data, status=status_code)
 
 
 class RoomDetailAPIView(APIView):
@@ -296,8 +286,7 @@ class ChatMessageDetailView(APIView):
             )
 
         Chat.objects.filter(
-            room=room,
-            regeneration_group=chat.regeneration_group
+            room=room, regeneration_group=chat.regeneration_group
         ).exclude(id=chat.id).update(is_main=False)
 
         chat.is_main = True

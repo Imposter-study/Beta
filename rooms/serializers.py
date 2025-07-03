@@ -58,6 +58,17 @@ class RoomCreateSerializer(serializers.Serializer):
     character_id = serializers.IntegerField()
 
 
+class RoomCreateResponseSerializer(RoomSerializer):
+    class Meta(RoomSerializer.Meta):
+        fields = [
+            "room_id",
+            "character_id",
+            "character_title",
+            "character_name",
+            "created_at",
+        ]
+
+
 class RoomDetailSerializer(serializers.ModelSerializer):
     room_id = serializers.CharField(source="uuid", read_only=True)
     character_title = serializers.CharField(source="character.title", read_only=True)

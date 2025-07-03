@@ -349,81 +349,65 @@ class GoogleLogin(SocialLoginView):
         return response
 
 
-# 팔로우
-class FollowCreateView(generics.CreateAPIView):
-    serializer_class = FollowSerializer
+# 팔로우/언팔로우 토글
+class FollowToggleView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        summary="팔로우 생성",
-        description="현재 로그인한 사용자가 다른 사용자를 팔로우합니다.",
+        summary="팔로우/언팔로우 토글",
+        description="한 번 누르면 팔로우, 또 누르면 언팔로우되는 토글 방식 API입니다.",
         request=FollowSerializer,
-        responses={201: FollowSerializer},
+        responses={200: FollowSerializer},
     )
     def post(self, request):
-        serializer = self.get_serializer(
-            data=request.data, context={"request": request}
+        serializer = FollowSerializer(data=request.data, context={"request": request})
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        from_user = request.user
+        to_user_id = serializer.validated_data["user_id"]
+        to_user = get_object_or_404(User, id=to_user_id)
+
+        follow, created = Follow.objects.get_or_create(
+            from_user=from_user, to_user=to_user
         )
-        if serializer.is_valid():
-            follow = serializer.save()
-            response_serializer = self.get_serializer(follow)
-            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-# 언팔로우
-@extend_schema(
-    summary="언팔로우",
-    description="현재 로그인한 사용자가 특정 유저를 언팔로우합니다. `to_user_id`는 언팔로우할 유저의 ID입니다.",
-    responses={
-        204: None,
-        404: {"post": "팔로우 관계가 없습니다."},
-    },
-)
-class UnfollowView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def delete(self, request, to_user_id):
-        try:
-            follow = Follow.objects.get(from_user=request.user, to_user_id=to_user_id)
+        if created:
+            response_serializer = FollowSerializer(follow)
+            return Response(
+                {"detail": "팔로우 성공", "data": response_serializer.data},
+                status=status.HTTP_201_CREATED,
+            )
+        else:
             follow.delete()
-            return Response(
-                {"detail": "언팔로우 성공"}, status=status.HTTP_204_NO_CONTENT
-            )
-        except Follow.DoesNotExist:
-            return Response(
-                {"detail": "팔로우 관계가 없습니다."}, status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"detail": "언팔로우 성공"}, status=status.HTTP_200_OK)
 
 
-# 팔로우/팔로워 수 조회
-@extend_schema(
-    summary="팔로우 수 조회",
-    description="해당 유저의 팔로잉 수와 팔로워 수를 조회합니다. `user_id`는 대상 유저의 ID입니다.",
-    responses={
-        200: {
-            "type": "object",
-            "properties": {
-                "user": {"type": "string", "description": "닉네임"},
-                "팔로잉": {"type": "integer"},
-                "팔로워": {"type": "integer"},
-            },
-        },
-        404: {"detail": "해당 유저가 존재하지 않습니다."},
-    },
-)
+# 팔로우 수 조회
 class FollowCountView(APIView):
+    @extend_schema(
+        summary="팔로우 수 조회",
+        description="특정 유저의 팔로워 수와 팔로잉 수를 조회합니다.",
+        responses={
+            200: OpenApiResponse(
+                response={"nickname": "user123", "팔로워 수": 10, "팔로잉 수": 7},
+                description="팔로우 수 정보 반환",
+            ),
+            404: OpenApiResponse(description="해당 유저가 존재하지 않습니다."),
+        },
+    )
     def get(self, request, user_id):
         try:
-            user = User.objects.get(user_id=user_id)
-            following_count = user.following.count()
+            user = User.objects.get(id=user_id)
             followers_count = user.followers.count()
+            following_count = user.following.count()
             return Response(
                 {
-                    "user": user.nickname if user.is_active else "탈퇴한 사용자",
-                    "팔로잉": following_count,
-                    "팔로워": followers_count,
-                }
+                    "nickname": user.nickname if user.is_active else "탈퇴한 사용자",
+                    "팔로워 수": followers_count,
+                    "팔로잉 수": following_count,
+                },
+                status=status.HTTP_200_OK,
             )
         except User.DoesNotExist:
             return Response(

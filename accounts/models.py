@@ -30,10 +30,10 @@ class User(AbstractUser):
         upload_to="profile_pics/", blank=True, null=True
     )
 
-    def save(self, *args, **kwargs):  # 자동 닉네임 생성 추가
+    def save(self):  # 자동 닉네임 생성 추가
         if not self.nickname:
             self.nickname = self.generate_random_nickname()
-        super().save(*args, **kwargs)
+        super().save()
 
     def generate_random_nickname(self):  # 랜덤 닉네임 생성기
         while True:

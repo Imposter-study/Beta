@@ -129,24 +129,25 @@ class MyProfileSerializer(UserProfileSerializer):
 # 팔로우
 class FollowSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(write_only=True)
-    to_user_nickname = serializers.SerializerMethodField()
-    created_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = Follow
-        fields = ["user_id", "to_user_nickname", "created_at"]
-
-    def get_to_user_nickname(self, obj):
-        return obj.to_user.nickname if obj.to_user else None
+        fields = ["user_id", "from_user", "to_user", "created_at"]
+        read_only_fields = ["from_user", "to_user", "created_at"]
 
     def validate_user_id(self, value):
+        request_user = self.context["request"].user
         try:
             to_user = User.objects.get(id=value)
         except User.DoesNotExist:
-            raise serializers.ValidationError("존재하지 않는 유저입니다.")
-        request = self.context.get("request")
-        if request and request.user == to_user:
+            raise serializers.ValidationError("존재하지 않는 사용자입니다.")
+
+        if not to_user.is_active:
+            raise serializers.ValidationError("탈퇴한 사용자는 팔로우할 수 없습니다.")
+
+        if request_user.id == value:
             raise serializers.ValidationError("자기 자신을 팔로우할 수 없습니다.")
+
         return value
 
     def create(self, validated_data):

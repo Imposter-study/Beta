@@ -158,7 +158,7 @@ class ChatResponseSerializer(serializers.ModelSerializer):
         return input_user_message
 
 
-class ChatMainResponseSerializer(ChatDetailSerializer):
+class ChatUpdateResponseSerializer(ChatDetailSerializer):
     class Meta(ChatDetailSerializer.Meta):
         fields = [
             "room_id",
@@ -194,17 +194,17 @@ class HistoryListSerializer(serializers.ModelSerializer):
 
 
 class HistoryDetailSerializer(serializers.ModelSerializer):
-    character_name = serializers.CharField(source="character.name", read_only=True)
     character_id = serializers.UUIDField(
         source="character.character_id", read_only=True
     )
+    character_name = serializers.CharField(source="character.name", read_only=True)
 
     class Meta:
         model = ConversationHistory
         fields = [
             "history_id",
-            "title",
             "character_id",
+            "title",
             "character_name",
             "chat_history",
         ]
@@ -212,3 +212,13 @@ class HistoryDetailSerializer(serializers.ModelSerializer):
 
 class HistoryTitleSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=100)
+
+
+class HistoryTitleResponseSerializer(HistoryDetailSerializer):
+    class Meta(HistoryDetailSerializer.Meta):
+        fields = [
+            "history_id",
+            "title",
+            "character_id",
+            "character_name",
+        ]

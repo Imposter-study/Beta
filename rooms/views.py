@@ -24,10 +24,12 @@ from .serializers import (
     RoomFixationSerializer,
     ChatRequestSerializer,
     ChatResponseSerializer,
+    ChatUpdateResponseSerializer,
     ChatDetailSerializer,
     HistoryListSerializer,
-    HistoryTitleSerializer,
     HistoryDetailSerializer,
+    HistoryTitleSerializer,
+    HistoryTitleResponseSerializer,
 )
 from .services import ChatService
 
@@ -205,8 +207,7 @@ class ChatAPIView(APIView):
         ai_chat_obj = chat_service.save_chat(room, ai_response, "ai")
 
         response_serializer = ChatResponseSerializer(
-            ai_chat_obj, 
-            context={'input_user_message': user_message}
+            ai_chat_obj, context={"input_user_message": user_message}
         )
         return Response(response_serializer.data, status=status.HTTP_200_OK)
 
@@ -629,14 +630,8 @@ class HistoryDetailAPIView(APIView):
         conversation_history.title = serializer.validated_data["title"]
         conversation_history.save()
 
-        return Response(
-            {
-                "message": "대화 내역 제목이 수정되었습니다.",
-                "history_id": conversation_history.history_id,
-                "title": conversation_history.title,
-            },
-            status=status.HTTP_200_OK,
-        )
+        response_serializer = HistoryTitleResponseSerializer(conversation_history)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="저장된 대화 내역 삭제",
@@ -652,10 +647,7 @@ class HistoryDetailAPIView(APIView):
         conversation_history = self.get_conversation_history(history_id, request.user)
         conversation_history.delete()
 
-        return Response(
-            {"message": "삭제되었습니다."},
-            status=status.HTTP_204_NO_CONTENT,
-        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @extend_schema(
         summary="대화 내역 불러오기",
@@ -677,7 +669,6 @@ class HistoryDetailAPIView(APIView):
     )
     def patch(self, request, room_uuid, history_id):
         room = get_object_or_404(Room, uuid=room_uuid, user=request.user)
-
         conversation_history = get_object_or_404(
             ConversationHistory, history_id=history_id, user=request.user
         )

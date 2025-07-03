@@ -350,8 +350,8 @@ class GoogleLogin(SocialLoginView):
 
 
 # 팔로우
-
-class FollowCreateView(APIView):
+class FollowCreateView(generics.CreateAPIView):
+    serializer_class = FollowSerializer
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
@@ -361,14 +361,14 @@ class FollowCreateView(APIView):
         responses={201: FollowSerializer},
     )
     def post(self, request):
-        serializer = FollowSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        follower_user = request.user
-        following_user_id = serializer.validated_data["user_id"]
-        following_user = get_object_or_404(User, id=following_user_id)
-        Follow.objects.create(from_user=follower_user, to_user=following_user)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        serializer = self.get_serializer(
+            data=request.data, context={"request": request}
+        )
+        if serializer.is_valid():
+            follow = serializer.save()
+            response_serializer = self.get_serializer(follow)
+            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # 언팔로우

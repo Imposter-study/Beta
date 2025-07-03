@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate
 from characters.serializers import UserProfileCharacterSerializer
-from .models import Follow
+from .models import Follow, User
 
 User = get_user_model()
 
@@ -128,9 +128,31 @@ class MyProfileSerializer(UserProfileSerializer):
 
 # 팔로우
 class FollowSerializer(serializers.ModelSerializer):
-    user_id = serializers.IntegerField()
+    user_id = serializers.IntegerField(write_only=True)
+    to_user_nickname = serializers.SerializerMethodField()
+    created_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = Follow
-        fields = ["user_id", "from_user", "to_user", "created_at"]
-        read_only_fields = ["from_user", "to_user", "created_at"]
+        fields = ["user_id", "to_user_nickname", "created_at"]
+
+    def get_to_user_nickname(self, obj):
+        return obj.to_user.nickname if obj.to_user else None
+
+    def validate_user_id(self, value):
+        try:
+            to_user = User.objects.get(id=value)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("존재하지 않는 유저입니다.")
+        request = self.context.get("request")
+        if request and request.user == to_user:
+            raise serializers.ValidationError("자기 자신을 팔로우할 수 없습니다.")
+        return value
+
+    def create(self, validated_data):
+        from_user = self.context["request"].user
+        to_user = User.objects.get(id=validated_data["user_id"])
+        follow, created = Follow.objects.get_or_create(
+            from_user=from_user, to_user=to_user
+        )
+        return follow

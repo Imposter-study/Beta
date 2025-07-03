@@ -70,9 +70,5 @@ class Follow(models.Model):
     class Meta:
         unique_together = ("from_user", "to_user")
 
-    def __str__(self):  # 탈퇴 유저 처리 표시
-        from_name = (
-            self.from_user.nickname if self.from_user.is_active else "탈퇴한 사용자"
-        )
-        to_name = self.to_user.nickname if self.to_user.is_active else "탈퇴한 사용자"
-        return f"{from_name} follows {to_name}"
+    def __str__(self):
+        return f"{self.from_user} follows {self.to_user}"

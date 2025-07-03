@@ -14,8 +14,6 @@ urlpatterns = [
     path("kakao/login/", views.KakaoLogin.as_view(), name="kakao_login"),
     path("kakao/redirect/", views.kakao_redirect, name="kakao_redirect"),
     path("google/login/", views.GoogleLogin.as_view(), name="google_login"),
-
-
     # 팔로우 관련
     path("follow/", views.FollowCreateView.as_view(), name="follow"),
     path("unfollow/<int:to_user_id>/", views.UnfollowView.as_view(), name="unfollow"),

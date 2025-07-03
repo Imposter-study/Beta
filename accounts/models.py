@@ -4,6 +4,7 @@ from django.utils import timezone
 from datetime import timedelta
 import random
 from allauth.socialaccount.models import SocialAccount
+from django.conf import settings
 
 
 class User(AbstractUser):
@@ -87,3 +88,35 @@ class Follow(models.Model):
 
     def __str__(self):
         return f"{self.from_user} follows {self.to_user}"
+
+
+class ChatProfile(models.Model):
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="chat_profiles"
+    )
+    chat_nickname = models.CharField(max_length=30)
+    chat_description = models.CharField(max_length=100, blank=True, null=True)
+    chat_profile_picture = models.ImageField(
+        upload_to="chat_profiles/", blank=True, null=True
+    )
+    is_default = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        if self.is_default:
+            ChatProfile.objects.filter(user=self.user).update(is_default=False)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.chat_nickname}"
+
+    def save(self, *args, **kwargs):
+        if self.is_default:
+            # 같은 유저의 다른 기본 프로필은 False로 설정
+            ChatProfile.objects.filter(user=self.user, is_default=True).exclude(
+                pk=self.pk
+            ).update(is_default=False)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.name}"

@@ -17,7 +17,7 @@ from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from allauth.socialaccount.providers.kakao import views as kakao_view
 from allauth.socialaccount.providers.google import views as google_view
 
-from .models import User, Follow
+from .models import User, Follow, ChatProfile
 from .serializers import (
     SignUpSerializer,
     MyProfileSerializer,
@@ -27,6 +27,7 @@ from .serializers import (
     DeactivateAccountSerializer,
     FollowSerializer,
     SimpleUserSerializer,
+    ChatProfileSerializer,
 )
 
 from drf_spectacular.utils import (
@@ -447,3 +448,62 @@ class FollowingListView(APIView):
         data = [follow.to_user for follow in followings]
         serializer = SimpleUserSerializer(data, many=True)
         return Response(serializer.data)
+
+
+# 대화프로필
+@extend_schema(tags=["ChatProfile"])
+class ChatProfileListCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="내 대화 프로필 목록 조회",
+        description="로그인한 사용자의 대화 프로필 목록을 반환합니다.",
+        responses={200: ChatProfileSerializer(many=True)},
+    )
+    def get(self, request):
+        profiles = ChatProfile.objects.filter(user=request.user)
+        serializer = ChatProfileSerializer(profiles, many=True)
+        return Response(serializer.data, status=200)
+
+    @extend_schema(
+        summary="대화 프로필 생성",
+        description="새로운 대화 프로필을 생성합니다. 기본 프로필로 설정 시 기존 기본은 해제됩니다.",
+        request=ChatProfileSerializer,
+        responses={201: ChatProfileSerializer},
+    )
+    def post(self, request):
+        serializer = ChatProfileSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+
+# 대화프로필 수정
+@extend_schema(tags=["ChatProfile"])
+class ChatProfileDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="대화 프로필 수정",
+        description="특정 대화 프로필을 수정합니다.",
+        request=ChatProfileSerializer,
+        responses={200: ChatProfileSerializer},
+    )
+    def put(self, request, chatprofile_id):
+        profile = get_object_or_404(ChatProfile, id=chatprofile_id, user=request.user)
+        serializer = ChatProfileSerializer(profile, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=200)
+        return Response(serializer.errors, status=400)
+
+    @extend_schema(
+        summary="대화 프로필 삭제",
+        description="특정 대화 프로필을 삭제합니다.",
+        responses={204: None},
+    )
+    def delete(self, request, chatprofile_id):
+        profile = get_object_or_404(ChatProfile, id=chatprofile_id, user=request.user)
+        profile.delete()
+        return Response(status=204)

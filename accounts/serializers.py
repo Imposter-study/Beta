@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate
 from characters.serializers import UserProfileCharacterSerializer
-from .models import Follow, User
+from .models import Follow, User, ChatProfile
 
 User = get_user_model()
 
@@ -172,3 +172,17 @@ class SimpleUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["id", "nickname", "profile_picture"]
+
+
+# 대화프로필
+class ChatProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChatProfile
+        fields = [
+            "id",
+            "chat_nickname",
+            "chat_description",
+            "chat_profile_picture",
+            "is_default",
+        ]
+        read_only_fields = ["id"]

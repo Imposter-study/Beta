@@ -6,7 +6,6 @@ import random, uuid
 from django.conf import settings
 
 
-
 class User(AbstractUser):
     GENDER_CHOICES = [("M", "남자"), ("F", "여자"), ("O", "기타")]
     WORD_POOL = [
@@ -31,6 +30,8 @@ class User(AbstractUser):
     profile_picture = models.ImageField(
         upload_to="profile_pics/", blank=True, null=True
     )
+    is_active = models.BooleanField(default=True)  # 기본 제공 필드지만 명시해도 OK
+    deactivated_at = models.DateTimeField(null=True, blank=True)  # 탈퇴 시점 저장용 필드
 
     def save(self, *args, **kwargs):  # 자동 닉네임 생성 추가
         if not self.nickname:
@@ -49,10 +50,11 @@ class User(AbstractUser):
 
     def mark_as_deactivated(self):
         self.is_active = False
+        self.deactivated_at = timezone.now()  # 탈퇴 시점 저장
         self.save()
 
     def is_ready_for_deletion(self):
-        if self.is_deactivated and self.deactivated_at:
+        if not self.is_active and hasattr(self, "deactivated_at"):
             return timezone.now() >= self.deactivated_at + timedelta(days=90)
         return False
 
@@ -61,7 +63,9 @@ class User(AbstractUser):
 
 
 class ChatProfile(models.Model):
-    chatprofile_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    uuid = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False, unique=True
+    )
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="chat_profiles"
     )
@@ -83,15 +87,19 @@ class ChatProfile(models.Model):
 
 class Follow(models.Model):
     from_user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name="following", on_delete=models.CASCADE
+        User, on_delete=models.CASCADE, related_name="following"
     )
     to_user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name="followers", on_delete=models.CASCADE
+        User, on_delete=models.CASCADE, related_name="followers"
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ("from_user", "to_user")
 
-    def __str__(self):
-        return f"{self.from_user.username} follows {self.to_user.username}"
+    def __str__(self):  # 탈퇴 유저 처리 표시
+        from_name = (
+            self.from_user.nickname if self.from_user.is_active else "탈퇴한 사용자"
+        )
+        to_name = self.to_user.nickname if self.to_user.is_active else "탈퇴한 사용자"
+        return f"{from_name} follows {to_name}"

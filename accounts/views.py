@@ -21,6 +21,7 @@ from .serializers import (
     SignUpSerializer,
     MyProfileSerializer,
     UserProfileSerializer,
+    UserPublicProfileSerializer,
     LoginSerializer,
     PasswordChangeSerializer,
     DeactivateAccountSerializer,
@@ -50,12 +51,6 @@ class UserCreateView(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        # serializer = SignUpSerializer(data=request.data)
-        # serializer.is_valid(raise_exception=True)
-        # serializer.save()
-        # return Response(serializer.data, status=status.HTTP_201_CREATED)
-        # 예외가 발생하면 바로 DRF가 400 응답 처리해줘서 코드 더 짧고 직관적으로 볼수 있읍
-
 
 @extend_schema_view(
     get=extend_schema(
@@ -79,38 +74,31 @@ class UserCreateView(APIView):
         },
     ),
 )
-# 내가 나의 프로필을 볼때, 타인의 프로필을 볼때
-class UserProfileView(APIView):
-    parser_classes = [MultiPartParser, FormParser]  # 파일 업로드 가능하게 설정
 
-    @extend_schema(
-        summary="회원 프로필 수정",
-        request=MyProfileSerializer,
-        responses={200: MyProfileSerializer},
-        description="nickname에 해당하는 본인의 프로필을 수정합니다. 이미지도 수정 가능.",
-    )
-    def get(self, request, nickname):
-        user = get_object_or_404(User, nickname=nickname)
 
-        if request.user.is_authenticated and request.user == user:
-            serializer = MyProfileSerializer(user)
-        else:
-            serializer = UserProfileSerializer(user)
+# 본인 프로필 조회 및 수정
+class MyProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
+    def get(self, request):
+        serializer = MyProfileSerializer(request.user)
         return Response(serializer.data)
 
-    def put(self, request, nickname):
-        user = get_object_or_404(User, nickname=nickname)
-
-        if request.user != user:
-            raise PermissionDenied("수정 권한이 없습니다")
-        serializer = MyProfileSerializer(user, data=request.data, partial=True)
-
-        if serializer.is_valid(raise_exception=True):
+    def put(self, request):
+        serializer = MyProfileSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
+            return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# 타인 프로필 조회
+class PublicProfileView(APIView):
+    def get(self, request, user_id):
+        user = get_object_or_404(User, user_id=user_id)
+        serializer = UserPublicProfileSerializer(user)
+        return Response(serializer.data)
 
 
 # 로그인
@@ -318,12 +306,14 @@ class ChatProfileDetailView(APIView):
 
     @extend_schema(
         summary="대화 프로필 수정",
-        description="특정 pk의 대화 프로필을 수정합니다.",
+        description="특정 대화 프로필을 수정합니다.",
         request=ChatProfileSerializer,
         responses={200: ChatProfileSerializer},
     )
-    def put(self, request, chatprofile_id): 
-        profile = get_object_or_404(ChatProfile, chatprofile_id=chatprofile_id, user=request.user)
+    def put(self, request, chatprofile_uuid):
+        profile = get_object_or_404(
+            ChatProfile, uuid=chatprofile_uuid, user=request.user
+        )
         serializer = ChatProfileSerializer(profile, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -332,11 +322,13 @@ class ChatProfileDetailView(APIView):
 
     @extend_schema(
         summary="대화 프로필 삭제",
-        description="특정 pk의 대화 프로필을 삭제합니다.",
+        description="특정 대화 프로필을 삭제합니다.",
         responses={204: None},
     )
-    def delete(self, request, pk):
-        profile = get_object_or_404(ChatProfile, pk=pk, user=request.user)
+    def delete(self, request, chatprofile_id):
+        profile = get_object_or_404(
+            ChatProfile, chatprofile_id=chatprofile_id, user=request.user
+        )
         profile.delete()
         return Response(status=204)
 
@@ -405,7 +397,7 @@ class FollowCountView(APIView):
             followers_count = user.followers.count()
             return Response(
                 {
-                    "user": user.nickname,
+                    "user": user.nickname if user.is_active else "탈퇴한 사용자",
                     "팔로잉": following_count,
                     "팔로워": followers_count,
                 }

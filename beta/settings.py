@@ -93,13 +93,21 @@ REST_FRAMEWORK = {
 
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=600),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ACCESS_TOKEN_LIFETIME": timedelta(
+        minutes=int(os.getenv("ACCESS_TOKEN_LIFETIME_MINUTES", 600))
+    ),
+    "REFRESH_TOKEN_LIFETIME": timedelta(
+        days=int(os.getenv("REFRESH_TOKEN_LIFETIME_DAYS", 7))
+    ),
     "ROTATE_REFRESH_TOKENS": True,  # 토큰갱신후 블랙리스트 적용
     "BLACKLIST_AFTER_ROTATION": True,  # 사용자가 로그인할 때마다 `last_login` 필드 업데이트
     "AUTH_HEADER_TYPES": ("Bearer",),
+    "USER_ID_FIELD": "user_id",  # 모델에서 primary key로 UUIDField를 사용하므로 유지
+    "USER_ID_CLAIM": "user_id",  # 토큰 페이로드에 들어가는 키 이름
+    "SIGNING_KEY": os.getenv(
+        "SIGNING_KEY", os.getenv("DJANGO_SECRET_KEY", "default-secret")
+    ),
 }
-
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",

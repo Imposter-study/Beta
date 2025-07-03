@@ -1,8 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate
-from .models import ChatProfile
-from .models import Follow
+from .models import ChatProfile, Follow
+
 
 
 User = get_user_model()
@@ -95,7 +95,6 @@ class DeactivateAccountSerializer(serializers.Serializer):
 
 
 # 내가 나의 프로필 조회,수정
-# TODO : 제타 아이디와 닉네임 고민
 class MyProfileSerializer(serializers.ModelSerializer):
     profile_picture = serializers.ImageField(
         required=False
@@ -104,6 +103,7 @@ class MyProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
+            "user_id",
             "username",
             "nickname",
             "introduce",
@@ -112,7 +112,6 @@ class MyProfileSerializer(serializers.ModelSerializer):
 
 
 # 타인의 프로필을 볼때
-# TODO: 타인의 프로필을 볼때 만든 캐릭터 필드 추가
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -122,10 +121,29 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "introduce",
         ]
 
+# 탈퇴한 사용자 처리 포함 프로필 시리얼라이저
+class UserPublicProfileSerializer(serializers.ModelSerializer):
+    nickname = serializers.SerializerMethodField()
+    profile_picture = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            "nickname",
+            "profile_picture",
+            "introduce",
+        ]
+
+    def get_nickname(self, obj):
+        return obj.nickname if obj.is_active else "탈퇴한 사용자"
+
+    def get_profile_picture(self, obj):
+        return obj.profile_picture.url if obj.is_active and obj.profile_picture else None
+
 
 # 대화프로필
 class ChatProfileSerializer(serializers.ModelSerializer):
-    chatprofile_id = serializers.IntegerField(read_only=True)
+    chatprofile_id = serializers.UUIDField(read_only=True)
 
     class Meta:
         model = ChatProfile
@@ -142,8 +160,9 @@ class ChatProfileSerializer(serializers.ModelSerializer):
 
 # 팔로우
 class FollowSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(read_only=True)
+    user_id = serializers.UUIDField(read_only=True)
+
     class Meta:
         model = Follow
-        fields = ["id", "from_user", "to_user", "created_at"]
+        fields = ["user_id", "from_user", "to_user", "created_at"]
         read_only_fields = ["from_user", "created_at"]

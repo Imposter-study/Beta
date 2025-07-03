@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Character, Hashtag
+import json
 
 
 # 캐릭터 해시태그
@@ -10,8 +11,9 @@ class HashtagSerializer(serializers.ModelSerializer):
 
         # 시리얼라이져의 중복검사 제외
         extra_kwargs = {
-            "tag_name": {"validators": []}, 
+            "tag_name": {"validators": []},
         }
+
 
 # 캐릭터 인트로
 class CharacterIntroSerializer(serializers.Serializer):
@@ -140,6 +142,20 @@ class CharacterSerializer(CharacterBaseSerializer):
                 character.hashtags.add(hashtag)
 
         return character
+
+    # multipart/form-data -> Json문자열 -> json.loads():딕서너리or리스트로 변환
+    def to_internal_value(self, data):
+        data = data.copy()
+        for key in ["intro", "example_situation", "hashtags"]:
+            value = data.get(key)
+            if isinstance(value, str):
+                try:
+                    data[key] = json.loads(value)
+                except json.JSONDecodeError:
+                    raise serializers.ValidationError(
+                        {key: f"{key}는 유효한 JSON 문자열이어야 합니다."}
+                    )
+        return super().to_internal_value(data)
 
 
 # 다른사람이 캐릭터를 조회할때

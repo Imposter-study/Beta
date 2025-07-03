@@ -158,14 +158,15 @@ class ChatResponseSerializer(serializers.ModelSerializer):
         return input_user_message
 
 
-class ChatUpdateResponseSerializer(ChatResponseSerializer):
-    class Meta(ChatResponseSerializer.Meta):
+class ChatMainResponseSerializer(ChatDetailSerializer):
+    class Meta(ChatDetailSerializer.Meta):
         fields = [
             "room_id",
             "user_id",
             "character_id",
             "character_title",
             "character_name",
+            "user_message",
             "ai_response",
             "created_at",
         ]

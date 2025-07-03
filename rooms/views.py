@@ -24,7 +24,7 @@ from .serializers import (
     RoomFixationSerializer,
     ChatRequestSerializer,
     ChatResponseSerializer,
-    ChatUpdateResponseSerializer,
+    ChatDetailSerializer,
     HistoryListSerializer,
     HistoryTitleSerializer,
     HistoryDetailSerializer,
@@ -290,10 +290,8 @@ class ChatMessageDetailView(APIView):
         chat.is_main = True
         chat.save()
 
-        return Response(
-            {"message": "해당 메시지가 main 메시지로 설정되었습니다."},
-            status=status.HTTP_200_OK,
-        )
+        serializer = ChatDetailSerializer(chat)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="메시지 삭제",

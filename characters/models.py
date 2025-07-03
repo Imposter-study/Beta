@@ -17,7 +17,7 @@ class Hashtag(models.Model):
 
 # 캐릭터
 class Character(models.Model):
-    character_id = models.AutoField(primary_key=True)
+    character_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     user = models.ForeignKey(
         User, on_delete=models.SET_NULL, related_name="characters", null=True
     )

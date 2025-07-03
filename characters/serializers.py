@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Character, Hashtag
+import json
 
 
 # 캐릭터 해시태그
@@ -7,6 +8,11 @@ class HashtagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Hashtag
         fields = ["tag_name"]
+
+        # 시리얼라이져의 중복검사 제외
+        extra_kwargs = {
+            "tag_name": {"validators": []},
+        }
 
 
 # 캐릭터 인트로
@@ -115,27 +121,41 @@ class CharacterSerializer(CharacterBaseSerializer):
 
         character = Character.objects.create(user=user, **validated_data)
 
-        for tag_dict in hashtag_data:
-            tag_name = tag_dict["tag_name"].lstrip("#")
+        for tag in hashtag_data:
+            tag_name = tag["tag_name"].lstrip("#")
             hashtag, created = Hashtag.objects.get_or_create(tag_name=tag_name)
             character.hashtags.add(hashtag)
 
         return character
 
     # 캐릭터 수정시 해시태그
-    def update(self, character_obj, validated_data):
+    def update(self, character, validated_data):
         hashtag_data = validated_data.pop("hashtags", None)
 
-        character_obj = super().update(character_obj, validated_data)
+        character = super().update(character, validated_data)
 
         if hashtag_data is not None:
-            character_obj.hashtags.clear()
-            for tag_dict in hashtag_data:
-                tag_name = tag_dict["tag_name"].lstrip("#")
-                hashtag, _ = Hashtag.objects.get_or_create(tag_name=tag_name)
-                character_obj.hashtags.add(hashtag)
+            character.hashtags.clear()
+            for tag in hashtag_data:
+                tag_name = tag["tag_name"].lstrip("#")
+                hashtag, created = Hashtag.objects.get_or_create(tag_name=tag_name)
+                character.hashtags.add(hashtag)
 
-        return character_obj
+        return character
+
+    # multipart/form-data -> Json문자열 -> json.loads():딕서너리or리스트로 변환
+    def to_internal_value(self, data):
+        data = data.copy()
+        for key in ["intro", "example_situation", "hashtags"]:
+            value = data.get(key)
+            if isinstance(value, str):
+                try:
+                    data[key] = json.loads(value)
+                except json.JSONDecodeError:
+                    raise serializers.ValidationError(
+                        {key: f"{key}는 유효한 JSON 문자열이어야 합니다."}
+                    )
+        return super().to_internal_value(data)
 
 
 # 다른사람이 캐릭터를 조회할때

@@ -44,7 +44,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i beta_key.pem $EC2_USER@$EC2_HOST <<'EOF'
             cd /home/ec2-user/Beta
             git pull origin dev # 최신 코드로 업데이트
-            sudo docker compose down # 기존 컨테이너 종료
-            sudo docker compose up -d --build # 컨테이너 빌드 및 백그라운드 실행
-            sudo docker compose exec django_app python manage.py migrate # DB 마이그레이션 수행
+            sudo docker-compose down # 기존 컨테이너 종료
+            sudo docker-compose up -d --build # 컨테이너 빌드 및 백그라운드 실행
+            sudo docker-compose exec django_app python manage.py migrate # DB 마이그레이션 수행
           EOF

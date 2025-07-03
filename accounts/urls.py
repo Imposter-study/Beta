@@ -24,9 +24,9 @@ urlpatterns = [
         name="chat_profile_detail",
     ),
     path("follow/", views.FollowCreateView.as_view(), name="follow"),
-    path("unfollow/<int:to_user_id>/", views.UnfollowView.as_view(), name="unfollow"),
+    path("unfollow/<uuid:to_user_id>/", views.UnfollowView.as_view(), name="unfollow"),
     path(
-        "follow/count/<int:user_id>/",
+        "follow/count/<uuid:user_id>/",
         views.FollowCountView.as_view(),
         name="follow_count",
     ),

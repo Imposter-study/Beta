@@ -14,6 +14,7 @@ from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.models import SocialAccount
 from django.http import JsonResponse
 from allauth.socialaccount.providers.google import views as google_view
+from uuid import UUID
 
 from .models import User, ChatProfile, Follow
 from .serializers import (
@@ -321,8 +322,8 @@ class ChatProfileDetailView(APIView):
         request=ChatProfileSerializer,
         responses={200: ChatProfileSerializer},
     )
-    def put(self, request, pk):
-        profile = get_object_or_404(ChatProfile, pk=pk, user=request.user)
+    def put(self, request, chatprofile_id): 
+        profile = get_object_or_404(ChatProfile, chatprofile_id=chatprofile_id, user=request.user)
         serializer = ChatProfileSerializer(profile, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -399,7 +400,7 @@ class UnfollowView(APIView):
 class FollowCountView(APIView):
     def get(self, request, user_id):
         try:
-            user = User.objects.get(id=user_id)
+            user = User.objects.get(user_id=user_id)
             following_count = user.following.count()
             followers_count = user.followers.count()
             return Response(

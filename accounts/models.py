@@ -21,7 +21,7 @@ class User(AbstractUser):
         "tiger",
         "cow",
     ]
-    user_id = models.UUIDField(default=uuid.uuid4)
+    user_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     username = models.CharField(max_length=20, unique=True)
     nickname = models.CharField(max_length=30, unique=True, blank=True, null=True)
     gender = models.CharField(default="O", choices=GENDER_CHOICES, max_length=1)
@@ -61,7 +61,7 @@ class User(AbstractUser):
 
 
 class ChatProfile(models.Model):
-    chatprofile_id = models.UUIDField(default=uuid.uuid4)
+    chatprofile_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="chat_profiles"
     )

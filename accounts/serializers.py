@@ -125,22 +125,24 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 # 대화프로필
 class ChatProfileSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(read_only=True)
+    chatprofile_id = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = ChatProfile
         fields = [
-            "id",
+            "chatprofile_id",
+            "user",
             "chat_nickname",
             "chat_description",
             "chat_profile_picture",
             "is_default",
         ]
-        read_only_fields = ["id"]
+        read_only_fields = ["chatprofile_id", "user"]
 
 
 # 팔로우
 class FollowSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
     class Meta:
         model = Follow
         fields = ["id", "from_user", "to_user", "created_at"]

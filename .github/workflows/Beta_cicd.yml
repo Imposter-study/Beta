@@ -24,7 +24,7 @@ jobs:
         run: |
           sudo curl -L "https://github.com/docker/compose/releases/download/2.37.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
-          docker-compose --version
+          docker compose version
 
       # 4. .env 파일 생성
       - name: Create dotenv # Github Secrets의 ENV를 .env 파일로 저장합니다.

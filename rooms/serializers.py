@@ -58,18 +58,45 @@ class RoomCreateSerializer(serializers.Serializer):
     character_id = serializers.IntegerField()
 
 
-class RoomDetailSerializer(serializers.ModelSerializer):
-    room_id = serializers.CharField(source="uuid", read_only=True)
-    character_title = serializers.CharField(source="character.title", read_only=True)
+class RoomCreateResponseSerializer(RoomSerializer):
+    class Meta(RoomSerializer.Meta):
+        fields = [
+            "room_id",
+            "character_id",
+            "character_title",
+            "character_name",
+            "created_at",
+        ]
+
+
+class RoomDetailSerializer(RoomSerializer):
     chats = serializers.SerializerMethodField()
 
-    class Meta:
-        model = Room
-        fields = ["room_id", "character_title", "created_at", "updated_at", "chats"]
+    class Meta(RoomSerializer.Meta):
+        fields = [
+            "room_id",
+            "character_id",
+            "character_title",
+            "character_name",
+            "created_at",
+            "updated_at",
+            "chats",
+        ]
 
     def get_chats(self, obj):
         chats = Chat.objects.filter(room=obj).order_by("created_at")
         return ChatDetailSerializer(chats, many=True).data
+
+
+class RoomFixationSerializer(RoomSerializer):
+    class Meta(RoomSerializer.Meta):
+        fields = [
+            "room_id",
+            "character_id",
+            "character_title",
+            "character_name",
+            "fixation",
+        ]
 
 
 class ChatDetailSerializer(serializers.ModelSerializer):
@@ -87,6 +114,62 @@ class ChatDetailSerializer(serializers.ModelSerializer):
 
 class ChatRequestSerializer(serializers.Serializer):
     message = serializers.CharField(max_length=1000, allow_blank=True)
+
+
+class ChatResponseSerializer(serializers.ModelSerializer):
+    room_id = serializers.SerializerMethodField()
+    user_id = serializers.SerializerMethodField()
+    character_id = serializers.SerializerMethodField()
+    character_title = serializers.SerializerMethodField()
+    character_name = serializers.SerializerMethodField()
+    user_message = serializers.SerializerMethodField()
+    ai_response = serializers.CharField(source="content")
+
+    class Meta:
+        model = Chat
+        fields = [
+            "room_id",
+            "user_id",
+            "character_id",
+            "character_title",
+            "character_name",
+            "user_message",
+            "ai_response",
+            "created_at",
+        ]
+
+    def get_room_id(self, obj):
+        return str(obj.room.uuid)
+
+    def get_user_id(self, obj):
+        return obj.room.user.pk
+
+    def get_character_id(self, obj):
+        return obj.room.character.pk
+
+    def get_character_title(self, obj):
+        return obj.room.character.title
+
+    def get_character_name(self, obj):
+        return obj.room.character.name
+
+    def get_user_message(self, obj):
+        input_user_message = self.context.get("input_user_message", "")
+        return input_user_message
+
+
+class ChatUpdateResponseSerializer(ChatDetailSerializer):
+    class Meta(ChatDetailSerializer.Meta):
+        fields = [
+            "room_id",
+            "user_id",
+            "character_id",
+            "character_title",
+            "character_name",
+            "user_message",
+            "ai_response",
+            "created_at",
+        ]
 
 
 class HistoryListSerializer(serializers.ModelSerializer):
@@ -111,17 +194,17 @@ class HistoryListSerializer(serializers.ModelSerializer):
 
 
 class HistoryDetailSerializer(serializers.ModelSerializer):
-    character_name = serializers.CharField(source="character.name", read_only=True)
     character_id = serializers.UUIDField(
         source="character.character_id", read_only=True
     )
+    character_name = serializers.CharField(source="character.name", read_only=True)
 
     class Meta:
         model = ConversationHistory
         fields = [
             "history_id",
-            "title",
             "character_id",
+            "title",
             "character_name",
             "chat_history",
         ]
@@ -129,3 +212,13 @@ class HistoryDetailSerializer(serializers.ModelSerializer):
 
 class HistoryTitleSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=100)
+
+
+class HistoryTitleResponseSerializer(HistoryDetailSerializer):
+    class Meta(HistoryDetailSerializer.Meta):
+        fields = [
+            "history_id",
+            "title",
+            "character_id",
+            "character_name",
+        ]

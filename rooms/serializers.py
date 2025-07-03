@@ -27,9 +27,9 @@ class RoomSerializer(serializers.ModelSerializer):
             "character_name",
             "character_image",
             "last_message",
+            "fixation",
             "created_at",
             "updated_at",
-            "fixation",
         ]
 
     def get_character_id(self, obj):
@@ -78,7 +78,7 @@ class ChatDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Chat
-        fields = ["chat_id", "content", "name", "created_at"]
+        fields = ["chat_id", "name", "content", "is_main", "created_at"]
 
     def get_name(self, obj):
         room = obj.room

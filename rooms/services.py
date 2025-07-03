@@ -37,7 +37,7 @@ class ChatService:
             memory_key="chat_history",
         )
 
-        queryset = Chat.objects.filter(room=room)
+        queryset = Chat.objects.filter(room=room, is_main=True)
         if before_datetime:
             queryset = queryset.filter(created_at__lt=before_datetime)
 

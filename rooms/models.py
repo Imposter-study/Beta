@@ -16,9 +16,10 @@ class Room(models.Model):
     character = models.ForeignKey(
         Character, on_delete=models.CASCADE, related_name="rooms"
     )
+    fixation = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
-    fixation = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = "채팅방"
@@ -38,6 +39,10 @@ class Chat(models.Model):
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="chats")
     content = models.TextField()
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+
+    is_main = models.BooleanField(default=True)
+    regeneration_group = models.UUIDField(null=True, blank=True)
+
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 

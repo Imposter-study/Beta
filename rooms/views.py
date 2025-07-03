@@ -1,3 +1,6 @@
+# Python Library
+import uuid
+
 # Third-Party Package
 from django.conf import settings
 from django.db.models import Prefetch
@@ -264,6 +267,48 @@ class ChatMessageDetailView(APIView):
         )
 
     @extend_schema(
+        summary="regeneration_group 내 main 메시지 지정",
+        description=(
+            "지정한 chat을 regeneration_group 내 main 메시지로 설정합니다. "
+            "대화를 재생성했을 때 사용자에게 보여줄 메시지를 선택할 수 있는 기능입니다."
+        ),
+        responses={
+            200: OpenApiResponse(description="main 설정 성공"),
+            400: OpenApiResponse(description="잘못된 요청"),
+            404: OpenApiResponse(description="채팅 또는 채팅방이 존재하지 않음"),
+        },
+        tags=["rooms/message"],
+    )
+    def patch(self, request, room_uuid, chat_id):
+        room = get_object_or_404(Room, uuid=room_uuid, user=request.user)
+        chat = get_object_or_404(Chat, id=chat_id)
+
+        if chat.room != room:
+            return Response(
+                {"detail": "해당 채팅이 이 채팅방에 속하지 않습니다."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if chat.regeneration_group is None:
+            return Response(
+                {"detail": "재생성 하지 않은 메시지는 is_main을 변경할 수 없습니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        Chat.objects.filter(
+            room=room,
+            regeneration_group=chat.regeneration_group
+        ).exclude(id=chat.id).update(is_main=False)
+
+        chat.is_main = True
+        chat.save()
+
+        return Response(
+            {"message": "해당 메시지가 main 메시지로 설정되었습니다."},
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
         summary="메시지 삭제",
         description="chat_id부터 해당 채팅방의 최신 메시지까지 삭제합니다.",
         responses={
@@ -277,19 +322,30 @@ class ChatMessageDetailView(APIView):
     )
     def delete(self, request, room_uuid, chat_id):
         room = get_object_or_404(Room, uuid=room_uuid, user=request.user)
+        target_chat = Chat.objects.filter(id=chat_id, room=room).first()
 
-        if not Chat.objects.filter(id=chat_id, room=room).exists():
+        if not target_chat:
             return Response(
                 {"error": "존재하지 않는 chat_id입니다."},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        chats_to_delete = Chat.objects.filter(room=room, id__gte=chat_id)
-        deleted_count = chats_to_delete.count()
-        chats_to_delete.delete()
+        base_queryset = Chat.objects.filter(room=room, id__gte=chat_id)
+        chat_ids = list(base_queryset.values_list("id", flat=True))
+
+        if target_chat.regeneration_group is not None:
+            regeneration_queryset = Chat.objects.filter(
+                room=room, regeneration_group=target_chat.regeneration_group
+            )
+            regeneration_ids = list(regeneration_queryset.values_list("id", flat=True))
+            chat_ids += regeneration_ids
+
+        chat_ids = list(set(chat_ids))
+
+        deleted_count, _ = Chat.objects.filter(id__in=chat_ids).delete()
 
         return Response(
-            {"message": "대화 내역 삭제", "deleted_count": deleted_count},
+            {"message": f"{deleted_count}개의 채팅이 삭제되었습니다."},
             status=status.HTTP_200_OK,
         )
 
@@ -363,9 +419,7 @@ class ChatRegenerateAPIView(APIView):
             400: OpenApiResponse(description="잘못된 요청"),
             401: OpenApiResponse(description="인증되지 않은 사용자"),
             403: OpenApiResponse(description="접근 권한이 없음"),
-            404: OpenApiResponse(
-                description="존재하지 않는 채팅방 또는 사용자 메시지가 없음"
-            ),
+            404: OpenApiResponse(description="존재하지 않는 채팅방 또는 메시지가 없음"),
         },
         tags=["rooms/message"],
     )
@@ -384,6 +438,20 @@ class ChatRegenerateAPIView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
+        last_message = Chat.objects.filter(room=room).order_by("-created_at").first()
+
+        if not last_message:
+            return Response(
+                {"error": "재생성할 메시지가 없습니다."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if last_message.role == "user":
+            return Response(
+                {"error": "사용자 메시지는 재생성할 수 없습니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         last_user_message = (
             Chat.objects.filter(room=room, role="user").order_by("-created_at").first()
         )
@@ -400,12 +468,26 @@ class ChatRegenerateAPIView(APIView):
             room, last_user_message.content, last_user_message
         )
 
+        if last_message.regeneration_group:
+            regeneration_group_id = last_message.regeneration_group
+        else:
+            regeneration_group_id = uuid.uuid4()
+            last_message.regeneration_group = regeneration_group_id
+            last_message.save()
+
+        Chat.objects.filter(regeneration_group=regeneration_group_id).update(
+            is_main=False
+        )
+
         ai_chat_obj = chat_service.save_chat(room, ai_response, "ai")
+        ai_chat_obj.regeneration_group = regeneration_group_id
+        ai_chat_obj.save()
 
         response_data = {
             "room_id": room.uuid,
             "character_name": room.character.name,
             "regenerated_response": ai_response,
+            "regeneration_group": str(regeneration_group_id),
             "created_at": ai_chat_obj.created_at,
         }
 
@@ -479,6 +561,12 @@ class HistoryAPIView(APIView):
                 {
                     "content": chat.content,
                     "role": chat.role,
+                    "is_main": chat.is_main,
+                    "regeneration_group": (
+                        str(chat.regeneration_group)
+                        if chat.regeneration_group
+                        else None
+                    ),
                     "timestamp": chat.created_at.isoformat(),
                 }
             )
@@ -628,6 +716,8 @@ class HistoryDetailAPIView(APIView):
                 room=room,
                 content=chat_data["content"],
                 role=chat_data["role"],
+                is_main=chat_data.get("is_main", True),
+                regeneration_group=chat_data.get("regeneration_group", None),
                 created_at=chat_data["timestamp"],
             )
             loaded_chats.append(chat)

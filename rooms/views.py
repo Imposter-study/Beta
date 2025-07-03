@@ -23,6 +23,8 @@ from .serializers import (
     RoomDetailSerializer,
     RoomFixationSerializer,
     ChatRequestSerializer,
+    ChatResponseSerializer,
+    ChatUpdateResponseSerializer,
     HistoryListSerializer,
     HistoryTitleSerializer,
     HistoryDetailSerializer,
@@ -140,7 +142,10 @@ class RoomDetailAPIView(APIView):
 
         serializer = RoomFixationSerializer(room)
 
-        return Response(serializer.data, status=status.HTTP_200_OK,)
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
 
     @extend_schema(
         summary="채팅방 나가기",
@@ -188,7 +193,6 @@ class ChatAPIView(APIView):
         user_message = serializer.validated_data["message"]
 
         room = get_object_or_404(Room, uuid=room_uuid, user=request.user)
-        character = room.character
 
         chat_service = ChatService()
 
@@ -200,17 +204,11 @@ class ChatAPIView(APIView):
 
         ai_chat_obj = chat_service.save_chat(room, ai_response, "ai")
 
-        response_data = {
-            "room_id": str(room.uuid),
-            "user_id": room.user.pk,
-            "character_id": character.pk,
-            "character_name": character.name,
-            "user_message": user_message,
-            "ai_response": ai_response,
-            "created_at": ai_chat_obj.created_at,
-        }
-
-        return Response(response_data, status=status.HTTP_200_OK)
+        response_serializer = ChatResponseSerializer(
+            ai_chat_obj, 
+            context={'input_user_message': user_message}
+        )
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
 
 
 class ChatMessageDetailView(APIView):
@@ -231,6 +229,7 @@ class ChatMessageDetailView(APIView):
     )
     def put(self, request, room_uuid, chat_id):
         serializer = ChatRequestSerializer(data=request.data)
+
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -252,9 +251,8 @@ class ChatMessageDetailView(APIView):
         chat.content = serializer.validated_data["message"]
         chat.save()
 
-        return Response(
-            {"message": "메시지가 수정되었습니다."}, status=status.HTTP_200_OK
-        )
+        response_serializer = ChatUpdateResponseSerializer(chat)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="regeneration_group 내 main 메시지 지정",

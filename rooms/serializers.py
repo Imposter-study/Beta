@@ -116,6 +116,61 @@ class ChatRequestSerializer(serializers.Serializer):
     message = serializers.CharField(max_length=1000, allow_blank=True)
 
 
+class ChatResponseSerializer(serializers.ModelSerializer):
+    room_id = serializers.SerializerMethodField()
+    user_id = serializers.SerializerMethodField()
+    character_id = serializers.SerializerMethodField()
+    character_title = serializers.SerializerMethodField()
+    character_name = serializers.SerializerMethodField()
+    user_message = serializers.SerializerMethodField()
+    ai_response = serializers.CharField(source="content")
+
+    class Meta:
+        model = Chat
+        fields = [
+            "room_id",
+            "user_id",
+            "character_id",
+            "character_title",
+            "character_name",
+            "user_message",
+            "ai_response",
+            "created_at",
+        ]
+
+    def get_room_id(self, obj):
+        return str(obj.room.uuid)
+
+    def get_user_id(self, obj):
+        return obj.room.user.pk
+
+    def get_character_id(self, obj):
+        return obj.room.character.pk
+
+    def get_character_title(self, obj):
+        return obj.room.character.title
+
+    def get_character_name(self, obj):
+        return obj.room.character.name
+
+    def get_user_message(self, obj):
+        input_user_message = self.context.get("input_user_message", "")
+        return input_user_message
+
+
+class ChatUpdateResponseSerializer(ChatResponseSerializer):
+    class Meta(ChatResponseSerializer.Meta):
+        fields = [
+            "room_id",
+            "user_id",
+            "character_id",
+            "character_title",
+            "character_name",
+            "ai_response",
+            "created_at",
+        ]
+
+
 class HistoryListSerializer(serializers.ModelSerializer):
     saved_date = serializers.SerializerMethodField()
 

@@ -19,24 +19,17 @@ jobs:
         with:
           python-version: '3.12'
 
-      # 3. Docker Compose 설치
-      - name: Install Docker Compose # Docker Compose를 설치합니다.
-        run: |
-          sudo curl -L "https://github.com/docker/compose/releases/download/2.37.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-          sudo chmod +x /usr/local/bin/docker-compose
-          docker compose version
-
-      # 4. .env 파일 생성
+      # 3. .env 파일 생성
       - name: Create dotenv # Github Secrets의 ENV를 .env 파일로 저장합니다.
         run: echo "${{ secrets.ENV }}" > .env
 
-      # 5. Docker Compose로 빌드 및 테스트 (로컬)
+      # 4. Docker Compose로 빌드 및 테스트 (로컬)
       - name: Build and test Docker container # docker-compose로 빌드 및 컨테이너 구동/테스트 후 종료합니다.
         run: |
-          docker-compose -f docker-compose.yml up -d --build
-          docker-compose down
+          docker compose -f docker-compose.yml up -d --build
+          docker compose down
 
-      # 6. EC2 서버로 배포
+      # 5. EC2 서버로 배포
       - name: Deploy to EC2 # EC2에 SSH 접속하여 최신 코드를 pull하고, 컨테이너를 재구동합니다.
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
@@ -51,7 +44,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i beta_key.pem $EC2_USER@$EC2_HOST <<'EOF'
             cd /home/ec2-user/Beta
             git pull origin dev # 최신 코드로 업데이트
-            sudo docker-compose down # 기존 컨테이너 종료
-            sudo docker-compose up -d --build # 컨테이너 빌드 및 백그라운드 실행
-            sudo docker-compose exec django_app python manage.py migrate # DB 마이그레이션 수행
+            sudo docker compose down # 기존 컨테이너 종료
+            sudo docker compose up -d --build # 컨테이너 빌드 및 백그라운드 실행
+            sudo docker compose exec django_app python manage.py migrate # DB 마이그레이션 수행
           EOF

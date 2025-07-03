@@ -4,20 +4,20 @@ from django.http import JsonResponse, HttpResponse
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, permissions
+from rest_framework import status, permissions, generics
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.permissions import IsAuthenticated
 
 # 소셜 로그인 관련
 from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.models import SocialAccount
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from allauth.socialaccount.providers.kakao import views as kakao_view
-
 from allauth.socialaccount.providers.google import views as google_view
 
-from .models import User
+from .models import User, Follow
 from .serializers import (
     SignUpSerializer,
     MyProfileSerializer,
@@ -25,6 +25,7 @@ from .serializers import (
     LoginSerializer,
     PasswordChangeSerializer,
     DeactivateAccountSerializer,
+    FollowSerializer,
 )
 
 from drf_spectacular.utils import (
@@ -346,3 +347,86 @@ class GoogleLogin(SocialLoginView):
         response.data["access"] = access_token
         response.data["refresh"] = refresh_token
         return response
+
+
+# 팔로우
+
+class FollowCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="팔로우 생성",
+        description="현재 로그인한 사용자가 다른 사용자를 팔로우합니다.",
+        request=FollowSerializer,
+        responses={201: FollowSerializer},
+    )
+    def post(self, request):
+        serializer = FollowSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        follower_user = request.user
+        following_user_id = serializer.validated_data["user_id"]
+        following_user = get_object_or_404(User, id=following_user_id)
+        Follow.objects.create(from_user=follower_user, to_user=following_user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+# 언팔로우
+@extend_schema(
+    summary="언팔로우",
+    description="현재 로그인한 사용자가 특정 유저를 언팔로우합니다. `to_user_id`는 언팔로우할 유저의 ID입니다.",
+    responses={
+        204: None,
+        404: {"post": "팔로우 관계가 없습니다."},
+    },
+)
+class UnfollowView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, to_user_id):
+        try:
+            follow = Follow.objects.get(from_user=request.user, to_user_id=to_user_id)
+            follow.delete()
+            return Response(
+                {"detail": "언팔로우 성공"}, status=status.HTTP_204_NO_CONTENT
+            )
+        except Follow.DoesNotExist:
+            return Response(
+                {"detail": "팔로우 관계가 없습니다."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+
+# 팔로우/팔로워 수 조회
+@extend_schema(
+    summary="팔로우 수 조회",
+    description="해당 유저의 팔로잉 수와 팔로워 수를 조회합니다. `user_id`는 대상 유저의 ID입니다.",
+    responses={
+        200: {
+            "type": "object",
+            "properties": {
+                "user": {"type": "string", "description": "닉네임"},
+                "팔로잉": {"type": "integer"},
+                "팔로워": {"type": "integer"},
+            },
+        },
+        404: {"detail": "해당 유저가 존재하지 않습니다."},
+    },
+)
+class FollowCountView(APIView):
+    def get(self, request, user_id):
+        try:
+            user = User.objects.get(user_id=user_id)
+            following_count = user.following.count()
+            followers_count = user.followers.count()
+            return Response(
+                {
+                    "user": user.nickname if user.is_active else "탈퇴한 사용자",
+                    "팔로잉": following_count,
+                    "팔로워": followers_count,
+                }
+            )
+        except User.DoesNotExist:
+            return Response(
+                {"detail": "해당 유저가 존재하지 않습니다."},
+                status=status.HTTP_404_NOT_FOUND,
+            )

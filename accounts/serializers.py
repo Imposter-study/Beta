@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate
 from characters.serializers import UserProfileCharacterSerializer
+from .models import Follow
 
 User = get_user_model()
 
@@ -123,3 +124,13 @@ class MyProfileSerializer(UserProfileSerializer):
     def get_characters(self, obj):
         queryset = obj.characters.all()
         return UserProfileCharacterSerializer(queryset, many=True).data
+
+
+# 팔로우
+class FollowSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField()
+
+    class Meta:
+        model = Follow
+        fields = ["user_id", "from_user", "to_user", "created_at"]
+        read_only_fields = ["from_user", "to_user", "created_at"]

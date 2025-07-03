@@ -30,9 +30,6 @@ class User(AbstractUser):
         upload_to="profile_pics/", blank=True, null=True
     )
 
-    # follower = models.ManyToManyField(
-    #    "self", symmetrical=False, related_name="following", blank=True
-    # )
     def save(self, *args, **kwargs):  # 자동 닉네임 생성 추가
         if not self.nickname:
             self.nickname = self.generate_random_nickname()
@@ -59,3 +56,23 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+
+
+class Follow(models.Model):
+    from_user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="following"
+    )
+    to_user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="followers"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("from_user", "to_user")
+
+    def __str__(self):  # 탈퇴 유저 처리 표시
+        from_name = (
+            self.from_user.nickname if self.from_user.is_active else "탈퇴한 사용자"
+        )
+        to_name = self.to_user.nickname if self.to_user.is_active else "탈퇴한 사용자"
+        return f"{from_name} follows {to_name}"

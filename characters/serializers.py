@@ -186,4 +186,4 @@ class CharacterSearchSerializer(CharacterBaseSerializer):
 class UserProfileCharacterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Character
-        fields = ["character", "name", "character_image"]
+        fields = ["character_id", "name", "character_image"]

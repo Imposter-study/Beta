@@ -26,6 +26,7 @@ from .serializers import (
     PasswordChangeSerializer,
     DeactivateAccountSerializer,
     FollowSerializer,
+    SimpleUserSerializer,
 )
 
 from drf_spectacular.utils import (
@@ -94,9 +95,9 @@ class UserProfileView(APIView):
         user = get_object_or_404(User, nickname=nickname)
 
         if request.user.is_authenticated and request.user == user:
-            serializer = MyProfileSerializer(user)
+            serializer = MyProfileSerializer(user, context={"request": request})
         else:
-            serializer = UserProfileSerializer(user)
+            serializer = UserProfileSerializer(user, context={"request": request})
 
         return Response(serializer.data)
 
@@ -414,3 +415,37 @@ class FollowCountView(APIView):
                 {"detail": "해당 유저가 존재하지 않습니다."},
                 status=status.HTTP_404_NOT_FOUND,
             )
+
+
+# 팔로워 목록 조회
+class FollowerListView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    @extend_schema(
+        summary="팔로워 목록 조회",
+        description="특정 사용자를 팔로우하는 사람들의 목록을 반환합니다.",
+        responses={200: SimpleUserSerializer(many=True)},
+    )
+    def get(self, request, user_id):
+        user = get_object_or_404(User, id=user_id)
+        followers = user.followers.select_related("from_user")
+        data = [follow.from_user for follow in followers]
+        serializer = SimpleUserSerializer(data, many=True)
+        return Response(serializer.data)
+
+
+# 팔로잉 목록 조회
+class FollowingListView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    @extend_schema(
+        summary="팔로잉 목록 조회",
+        description="특정 사용자가 팔로우한 사람들의 목록을 반환합니다.",
+        responses={200: SimpleUserSerializer(many=True)},
+    )
+    def get(self, request, user_id):
+        user = get_object_or_404(User, id=user_id)
+        followings = user.following.select_related("to_user")
+        data = [follow.to_user for follow in followings]
+        serializer = SimpleUserSerializer(data, many=True)
+        return Response(serializer.data)

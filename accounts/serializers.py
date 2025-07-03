@@ -97,6 +97,7 @@ class DeactivateAccountSerializer(serializers.Serializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     profile_picture = serializers.ImageField(required=False)
     characters = serializers.SerializerMethodField()
+    is_following = serializers.SerializerMethodField()  # 팔로잉 유/무 확인
 
     class Meta:
         model = User
@@ -106,11 +107,18 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "introduce",
             "profile_picture",
             "characters",
+            "is_following",
         ]
 
     def get_characters(self, obj):
         queryset = obj.characters.filter(is_character_public=True)
         return UserProfileCharacterSerializer(queryset, many=True).data
+
+    def get_is_following(self, obj):
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            return Follow.objects.filter(from_user=request.user, to_user=obj).exists()
+        return False
 
 
 # 내 프로필 조회
@@ -157,3 +165,10 @@ class FollowSerializer(serializers.ModelSerializer):
             from_user=from_user, to_user=to_user
         )
         return follow
+
+
+# 유저 간단 정보만 보여줄 때 사용하는 Serializer
+class SimpleUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "nickname", "profile_picture"]

@@ -21,6 +21,8 @@ urlpatterns = [
         views.FollowCountView.as_view(),
         name="follow_count",
     ),
+    path("followers/<int:user_id>/", views.FollowerListView.as_view(), name="follower-list"),
+path("followings/<int:user_id>/", views.FollowingListView.as_view(), name="following-list"),
     path("<str:nickname>/", views.UserProfileView.as_view()),
 ]
 

@@ -69,18 +69,34 @@ class RoomCreateResponseSerializer(RoomSerializer):
         ]
 
 
-class RoomDetailSerializer(serializers.ModelSerializer):
-    room_id = serializers.CharField(source="uuid", read_only=True)
-    character_title = serializers.CharField(source="character.title", read_only=True)
+class RoomDetailSerializer(RoomSerializer):
     chats = serializers.SerializerMethodField()
 
-    class Meta:
-        model = Room
-        fields = ["room_id", "character_title", "created_at", "updated_at", "chats"]
+    class Meta(RoomSerializer.Meta):
+        fields = [
+            "room_id",
+            "character_id",
+            "character_title",
+            "character_name",
+            "created_at",
+            "updated_at",
+            "chats",
+        ]
 
     def get_chats(self, obj):
         chats = Chat.objects.filter(room=obj).order_by("created_at")
         return ChatDetailSerializer(chats, many=True).data
+
+
+class RoomFixationSerializer(RoomSerializer):
+    class Meta(RoomSerializer.Meta):
+        fields = [
+            "room_id",
+            "character_id",
+            "character_title",
+            "character_name",
+            "fixation",
+        ]
 
 
 class ChatDetailSerializer(serializers.ModelSerializer):

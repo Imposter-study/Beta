@@ -21,6 +21,7 @@ from .serializers import (
     RoomCreateSerializer,
     RoomCreateResponseSerializer,
     RoomDetailSerializer,
+    RoomFixationSerializer,
     ChatRequestSerializer,
     HistoryListSerializer,
     HistoryTitleSerializer,
@@ -64,7 +65,7 @@ class RoomAPIView(APIView):
         request=RoomCreateSerializer,
         responses={
             200: OpenApiResponse(description="이미 채팅방이 존재하는 캐릭터"),
-            201: OpenApiResponse(description="채팅방 생성 성공"),
+            201: OpenApiResponse(description="채팅방 생성"),
             400: OpenApiResponse(description="잘못된 요청"),
             401: OpenApiResponse(description="인증되지 않은 사용자"),
         },
@@ -137,10 +138,9 @@ class RoomDetailAPIView(APIView):
         room.fixation = not room.fixation
         room.save()
 
-        return Response(
-            {"fixation": room.fixation, "message": "고정 상태가 변경되었습니다."},
-            status=status.HTTP_200_OK,
-        )
+        serializer = RoomFixationSerializer(room)
+
+        return Response(serializer.data, status=status.HTTP_200_OK,)
 
     @extend_schema(
         summary="채팅방 나가기",

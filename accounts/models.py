@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from datetime import timedelta
 import random
+from allauth.socialaccount.models import SocialAccount
 
 
 class User(AbstractUser):
@@ -30,10 +31,13 @@ class User(AbstractUser):
         upload_to="profile_pics/", blank=True, null=True
     )
 
-    def save(self):  # 자동 닉네임 생성 추가
+    is_active = models.BooleanField(default=True)
+    deactivated_at = models.DateTimeField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):  # 자동 닉네임 생성 추가
         if not self.nickname:
             self.nickname = self.generate_random_nickname()
-        super().save()
+        super().save(*args, **kwargs)
 
     def generate_random_nickname(self):  # 랜덤 닉네임 생성기
         while True:
@@ -47,6 +51,17 @@ class User(AbstractUser):
 
     def mark_as_deactivated(self):
         self.is_active = False
+        self.username = f"deleted_user_{self.id}"
+        self.nickname = "탈퇴한 사용자"  # 탈퇴 사용자는 나중에 "탈퇴한 사용자"로 표시되도록 프론트에서 조건 분기하면 됩니다.
+        self.email = f"deleted_{self.id}@deleted.com"
+        self.introduce = None
+        self.profile_picture = None
+        self.birth_date = None
+        self.gender = "O"
+        self.deactivated_at = timezone.now()
+        SocialAccount.objects.filter(
+            user=self
+        ).delete()  # 소셜 계정이 연결되어 있다면 삭제
         self.save()
 
     def is_ready_for_deletion(self):

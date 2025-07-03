@@ -215,10 +215,10 @@ class DeactivateAccountView(APIView):
 
     @extend_schema(
         summary="회원탈퇴!!!",
-        description="비밀번호 입력해주세요",
+        description="비밀번호를 입력하여 계정을 탈퇴합니다",
         request=DeactivateAccountSerializer,
         responses={
-            200: OpenApiResponse(description="Account deactivated."),
+            200: OpenApiResponse(description="탈퇴 완료."),
             400: OpenApiResponse(description="비밀번호가 일치하지 않습니다."),
         },
     )
@@ -230,9 +230,7 @@ class DeactivateAccountView(APIView):
             user = request.user
             user.mark_as_deactivated()
             return Response(
-                {
-                    "detail": "Account deactivated. Will be permanently deleted after 90 days."
-                },
+                {"detail": "계정이 탈퇴 처리되었습니다. 90일 후 완전 삭제됩니다."},
                 status=status.HTTP_200_OK,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

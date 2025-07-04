@@ -353,13 +353,7 @@ class ChatSuggestionAPIView(APIView):
         tags=["rooms/message"],
     )
     def post(self, request, room_uuid):
-        try:
-            room = Room.objects.get(uuid=room_uuid)
-        except Room.DoesNotExist:
-            return Response(
-                {"error": "존재하지 않는 채팅방입니다."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        room = get_object_or_404(Room, uuid=room_uuid)
 
         if room.user != request.user:
             return Response(
@@ -410,13 +404,7 @@ class ChatRegenerateAPIView(APIView):
         tags=["rooms/message"],
     )
     def post(self, request, room_uuid):
-        try:
-            room = Room.objects.get(uuid=room_uuid)
-        except Room.DoesNotExist:
-            return Response(
-                {"error": "존재하지 않는 채팅방입니다."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        room = get_object_or_404(Room, uuid=room_uuid)
 
         if room.user != request.user:
             return Response(

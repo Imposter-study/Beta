@@ -54,8 +54,7 @@ class RoomSerializer(serializers.ModelSerializer):
 
 
 class RoomCreateSerializer(serializers.Serializer):
-    # TODO: uuid 적용 후 수정 예정
-    character_id = serializers.IntegerField()
+    character_id = serializers.UUIDField()
 
 
 class RoomCreateResponseSerializer(RoomSerializer):

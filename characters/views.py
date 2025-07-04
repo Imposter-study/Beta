@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.shortcuts import get_object_or_404
 from django.http import Http404
 from drf_spectacular.utils import (
@@ -12,6 +12,7 @@ from drf_spectacular.utils import (
     extend_schema_view,
     OpenApiResponse,
     OpenApiParameter,
+    OpenApiExample
 )
 from .models import Character
 from .serializers import (
@@ -33,18 +34,63 @@ from django.db.models import Q
     ),
     post=extend_schema(
         summary="캐릭터 생성",
-        description="캐릭터를 생성합니다.",
-        request=CharacterSerializer,
+        description=(
+            "multipart/form-data 형식으로 캐릭터를 생성합니다.\n"
+            "- 이미지 파일은 `character_image` 필드에 업로드합니다.\n"
+            "- `intro`, `example_situation`, `hashtags` 필드는 JSON 문자열로 전달해야 합니다.\n"
+            "- `hashtags`는 `[{\"tag_name\":\"#예시\"}, ...]` 형태입니다."
+        ),
+        request={
+            'multipart/form-data': {
+                'type': 'object',
+                'properties': {
+                    'title': {'type': 'string', 'maxLength': 20, 'description': '캐릭터 제목'},
+                    'name': {'type': 'string', 'maxLength': 10, 'description': '캐릭터 이름'},
+                    'character_image': {'type': 'string', 'format': 'binary', 'description': '캐릭터 이미지 파일'},
+                    'intro': {'type': 'string', 'description': '인트로 JSON 문자열'},
+                    'example_situation': {'type': 'string', 'description': '상황예시 JSON 문자열'},
+                    'character_info': {'type': 'string', 'description': '캐릭터 정보'},
+                    'description': {'type': 'string', 'description': '상세 설명'},
+                    'presentation': {'type': 'string', 'maxLength': 40, 'description': '소개글'},
+                    'creator_comment': {'type': 'string', 'maxLength': 150, 'description': '크리에이터 코멘트'},
+                    'is_character_public': {'type': 'boolean', 'description': '캐릭터 공개 여부'},
+                    'is_description_public': {'type': 'boolean', 'description': '상세설명 공개 여부'},
+                    'is_example_public': {'type': 'boolean', 'description': '상황예시 공개 여부'},
+                    'hashtags': {'type': 'string', 'description': '해시태그 JSON 문자열'},
+                },
+                'required': ['title', 'name', 'intro'],
+            }
+        },
         responses={
-            201: CharacterSerializer,
+            201: OpenApiResponse(response=CharacterSerializer, description="캐릭터 생성 성공"),
             400: OpenApiResponse(description="잘못된 요청입니다."),
             401: OpenApiResponse(description="로그인이 필요합니다."),
         },
+        examples=[
+            OpenApiExample(
+                '캐릭터 생성 예시',
+                value={
+                    'title': '마법사',
+                    'name': '헤르미온느',
+                    'intro': '[{"id":"1","role":"system","message":"안녕하세요"}]',
+                    'example_situation': '[ [{"id":"1","role":"user","message":"예시 상황입니다."}] ]',
+                    'character_info': '마법에 능한 소녀',
+                    'description': '마법 세계에서 모험하는 캐릭터',
+                    'presentation': '친절한 마법사',
+                    'creator_comment': '즐겁게 사용해주세요',
+                    'is_character_public': True,
+                    'is_description_public': True,
+                    'is_example_public': True,
+                    'hashtags': '[{"tag_name":"#마법사"}, {"tag_name":"#모험"}]',
+                },
+                media_type='application/json',
+            )
+        ],
     ),
 )
 class CharacterAPIView(APIView):
     authentication_classes = [JWTAuthentication]
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_permissions(self):
         if self.request.method == "GET":
@@ -105,23 +151,21 @@ class CharacterAPIView(APIView):
 class CharacterDetailAPIView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
-    def get_object(self, pk):
-        character = get_object_or_404(Character, pk=pk)
+    def get_object(self, character_id):
+        character = get_object_or_404(Character, pk=character_id)
         if character.user != self.request.user:
-            raise PermissionDenied(
-                "본인이 생성한 캐릭터만 조회, 수정, 삭제할 수 있습니다."
-            )
+            raise PermissionDenied("본인이 생성한 캐릭터만 조회, 수정, 삭제할 수 있습니다.")
         return character
 
-    def get(self, request, pk):
-        character = self.get_object(pk)
+    def get(self, request, character_id):
+        character = self.get_object(character_id)
         serializer = CharacterSerializer(character, context={"request": request})
         return Response(serializer.data)
 
-    def put(self, request, pk):
-        character = self.get_object(pk)
+    def put(self, request, character_id):
+        character = self.get_object(character_id)
         serializer = CharacterSerializer(
             character, data=request.data, partial=True, context={"request": request}
         )
@@ -130,8 +174,8 @@ class CharacterDetailAPIView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, pk):
-        character = self.get_object(pk)
+    def delete(self, request, character_id):
+        character = self.get_object(character_id)
         character.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 

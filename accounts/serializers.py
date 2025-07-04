@@ -201,10 +201,10 @@ class ChatProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChatProfile
         fields = [
-            "id",
+            "uuid",
             "chat_nickname",
             "chat_description",
             "chat_profile_picture",
             "is_default",
         ]
-        read_only_fields = ["id"]
+        read_only_fields = ["uuid"]

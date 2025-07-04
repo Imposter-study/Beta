@@ -18,7 +18,7 @@ urlpatterns = [
     path("follow/", views.FollowToggleView.as_view()),
     # 대화프로필
     path("chat_profiles/", views.ChatProfileListCreateView.as_view()),
-    path("chat_profiles/<int:chatprofile_id>/", views.ChatProfileDetailView.as_view()),
+    path("chat_profiles/<uuid:chatprofile_uuid>/", views.ChatProfileDetailView.as_view()),
     # 프로필조회
     path("my_profile/", views.MyProfileView.as_view()),
     path("<str:nickname>/", views.UserProfileView.as_view()),

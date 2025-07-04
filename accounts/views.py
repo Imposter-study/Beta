@@ -424,8 +424,8 @@ class ChatProfileDetailView(APIView):
         request=ChatProfileSerializer,
         responses={200: ChatProfileSerializer},
     )
-    def put(self, request, chatprofile_id):
-        profile = get_object_or_404(ChatProfile, id=chatprofile_id, user=request.user)
+    def put(self, request, chatprofile_uuid):
+        profile = get_object_or_404(ChatProfile, uuid=chatprofile_uuid, user=request.user)
         serializer = ChatProfileSerializer(profile, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -437,7 +437,7 @@ class ChatProfileDetailView(APIView):
         description="특정 대화 프로필을 삭제합니다.",
         responses={204: None},
     )
-    def delete(self, request, chatprofile_id):
-        profile = get_object_or_404(ChatProfile, id=chatprofile_id, user=request.user)
+    def delete(self, request, chatprofile_uuid):
+        profile = get_object_or_404(ChatProfile, uuid=chatprofile_uuid, user=request.user)
         profile.delete()
         return Response(status=204)

@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from datetime import timedelta
-import random
+import random, uuid
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
 
@@ -91,7 +91,7 @@ class Follow(models.Model):
 
 
 class ChatProfile(models.Model):
-
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="chat_profiles"
     )

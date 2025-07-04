@@ -223,7 +223,7 @@ class DeactivateAccountView(APIView):
             400: OpenApiResponse(description="비밀번호가 일치하지 않습니다."),
         },
     )
-    def delete(self, request):
+    def post(self, request):
         serializer = DeactivateAccountSerializer(
             data=request.data, context={"request": request}
         )

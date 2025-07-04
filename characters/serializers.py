@@ -75,6 +75,7 @@ class CharacterSerializer(CharacterBaseSerializer):
     is_example_public = serializers.BooleanField()
     hashtags = HashtagSerializer(many=True, required=False)
     room_number = serializers.SerializerMethodField()
+    is_scrapped = serializers.SerializerMethodField()
 
     class Meta(CharacterBaseSerializer.Meta):
         fields = CharacterBaseSerializer.Meta.fields + [
@@ -83,6 +84,7 @@ class CharacterSerializer(CharacterBaseSerializer):
             "is_example_public",
             "hashtags",
             "room_number",
+            "is_scrapped",
         ]
 
     def to_representation(self, instance):
@@ -142,6 +144,12 @@ class CharacterSerializer(CharacterBaseSerializer):
                 character.hashtags.add(hashtag)
 
         return character
+
+    def get_is_scrapped(self, obj):
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            return obj.scrapped_by.filter(id=request.user.id).exists()
+        return False
 
     # multipart/form-data -> Json문자열 -> json.loads():딕서너리or리스트로 변환
     def to_internal_value(self, data):

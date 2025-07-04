@@ -1,13 +1,12 @@
 from django.conf import settings
 from django.shortcuts import get_object_or_404, render
-from django.http import JsonResponse, HttpResponse
+from django.http import HttpResponse
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, permissions, generics
-from rest_framework.exceptions import PermissionDenied
+from rest_framework import status, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.permissions import IsAuthenticated
 
 # 소셜 로그인 관련
@@ -26,7 +25,6 @@ from .serializers import (
     PasswordChangeSerializer,
     DeactivateAccountSerializer,
     FollowSerializer,
-    SimpleUserSerializer,
     ChatProfileSerializer,
 )
 
@@ -53,19 +51,35 @@ class UserCreateView(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        # serializer = SignUpSerializer(data=request.data)
-        # serializer.is_valid(raise_exception=True)
-        # serializer.save()
-        # return Response(serializer.data, status=status.HTTP_201_CREATED)
-        # 예외가 발생하면 바로 DRF가 400 응답 처리해줘서 코드 더 짧고 직관적으로 볼수 있읍
+
+@extend_schema_view(
+    get=extend_schema(
+        summary="다른 유저 조회",
+        description="본인 혹은 타인의 프로필을 조회합니다.",
+        responses={
+            200: UserProfileSerializer,
+            401: OpenApiResponse(description="로그인이 필요합니다."),
+            404: OpenApiResponse(description="사용자를 찾을 수 없습니다."),
+        },
+    ),
+)
+# 내가 나의 프로필을 볼때, 타인의 프로필을 볼때
+class UserProfileView(APIView):
+
+    def get(self, request, nickname):
+        user = get_object_or_404(User, nickname=nickname)
+
+        serializer = UserProfileSerializer(user)
+
+        return Response(serializer.data)
 
 
 @extend_schema_view(
     get=extend_schema(
         summary="사용자 프로필 조회",
-        description="본인 혹은 타인의 프로필을 조회합니다.",
+        description="본인 프로필을 조회합니다.",
         responses={
-            200: UserProfileSerializer,
+            200: MyProfileSerializer,
             401: OpenApiResponse(description="로그인이 필요합니다."),
             404: OpenApiResponse(description="사용자를 찾을 수 없습니다."),
         },
@@ -82,31 +96,18 @@ class UserCreateView(APIView):
         },
     ),
 )
-# 내가 나의 프로필을 볼때, 타인의 프로필을 볼때
-class UserProfileView(APIView):
-    parser_classes = [MultiPartParser, FormParser]  # 파일 업로드 가능하게 설정
+class MyProfileView(APIView):
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
-    @extend_schema(
-        summary="회원 프로필 수정",
-        request=MyProfileSerializer,
-        responses={200: MyProfileSerializer},
-        description="nickname에 해당하는 본인의 프로필을 수정합니다. 이미지도 수정 가능.",
-    )
-    def get(self, request, nickname):
-        user = get_object_or_404(User, nickname=nickname)
-
-        if request.user.is_authenticated and request.user == user:
-            serializer = MyProfileSerializer(user, context={"request": request})
-        else:
-            serializer = UserProfileSerializer(user, context={"request": request})
+    def get(self, request):
+        user = request.user
+        serializer = MyProfileSerializer(user)
 
         return Response(serializer.data)
 
-    def put(self, request, nickname):
-        user = get_object_or_404(User, nickname=nickname)
+    def put(self, request):
+        user = request.user
 
-        if request.user != user:
-            raise PermissionDenied("수정 권한이 없습니다")
         serializer = MyProfileSerializer(user, data=request.data, partial=True)
 
         if serializer.is_valid(raise_exception=True):
@@ -381,73 +382,6 @@ class FollowToggleView(APIView):
         else:
             follow.delete()
             return Response({"detail": "언팔로우 성공"}, status=status.HTTP_200_OK)
-
-
-# 팔로우 수 조회
-class FollowCountView(APIView):
-    @extend_schema(
-        summary="팔로우 수 조회",
-        description="특정 유저의 팔로워 수와 팔로잉 수를 조회합니다.",
-        responses={
-            200: OpenApiResponse(
-                response={"nickname": "user123", "팔로워 수": 10, "팔로잉 수": 7},
-                description="팔로우 수 정보 반환",
-            ),
-            404: OpenApiResponse(description="해당 유저가 존재하지 않습니다."),
-        },
-    )
-    def get(self, request, user_id):
-        try:
-            user = User.objects.get(id=user_id)
-            followers_count = user.followers.count()
-            following_count = user.following.count()
-            return Response(
-                {
-                    "nickname": user.nickname if user.is_active else "탈퇴한 사용자",
-                    "팔로워 수": followers_count,
-                    "팔로잉 수": following_count,
-                },
-                status=status.HTTP_200_OK,
-            )
-        except User.DoesNotExist:
-            return Response(
-                {"detail": "해당 유저가 존재하지 않습니다."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-
-# 팔로워 목록 조회
-class FollowerListView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    @extend_schema(
-        summary="팔로워 목록 조회",
-        description="특정 사용자를 팔로우하는 사람들의 목록을 반환합니다.",
-        responses={200: SimpleUserSerializer(many=True)},
-    )
-    def get(self, request, user_id):
-        user = get_object_or_404(User, id=user_id)
-        followers = user.followers.select_related("from_user")
-        data = [follow.from_user for follow in followers]
-        serializer = SimpleUserSerializer(data, many=True)
-        return Response(serializer.data)
-
-
-# 팔로잉 목록 조회
-class FollowingListView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    @extend_schema(
-        summary="팔로잉 목록 조회",
-        description="특정 사용자가 팔로우한 사람들의 목록을 반환합니다.",
-        responses={200: SimpleUserSerializer(many=True)},
-    )
-    def get(self, request, user_id):
-        user = get_object_or_404(User, id=user_id)
-        followings = user.following.select_related("to_user")
-        data = [follow.to_user for follow in followings]
-        serializer = SimpleUserSerializer(data, many=True)
-        return Response(serializer.data)
 
 
 # 대화프로필

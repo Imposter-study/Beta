@@ -98,6 +98,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
     profile_picture = serializers.ImageField(required=False)
     characters = serializers.SerializerMethodField()
     is_following = serializers.SerializerMethodField()  # 팔로잉 유/무 확인
+    followers_count = serializers.SerializerMethodField()
+    following_count = serializers.SerializerMethodField()
+    followers = serializers.SerializerMethodField()
+    followings = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -108,6 +112,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "profile_picture",
             "characters",
             "is_following",
+            "followers_count",
+            "following_count",
+            "followings",
+            "followers",
         ]
 
     def get_characters(self, obj):
@@ -120,18 +128,32 @@ class UserProfileSerializer(serializers.ModelSerializer):
             return Follow.objects.filter(from_user=request.user, to_user=obj).exists()
         return False
 
+    def get_followers_count(self, obj):
+        return obj.followers.count()
 
-# 내 프로필 조회
+    def get_following_count(self, obj):
+        return obj.following.count()
+
+    def get_followers(self, obj):
+        # Follow 모델의 from_user가 팔로워
+        followers = obj.followers.select_related("from_user")
+        users = [follow.from_user for follow in followers]
+        return SimpleUserSerializer(users, many=True).data
+
+    def get_followings(self, obj):
+        # Follow 모델의 to_user가 팔로우 대상
+        followings = obj.following.select_related("to_user")
+        users = [follow.to_user for follow in followings]
+        return SimpleUserSerializer(users, many=True).data
+
+
 class MyProfileSerializer(UserProfileSerializer):
+
     class Meta(UserProfileSerializer.Meta):
         fields = UserProfileSerializer.Meta.fields + [
             "birth_date",
             "gender",
         ]
-
-    def get_characters(self, obj):
-        queryset = obj.characters.all()
-        return UserProfileCharacterSerializer(queryset, many=True).data
 
 
 # 팔로우

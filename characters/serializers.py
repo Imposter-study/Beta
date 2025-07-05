@@ -192,6 +192,8 @@ class CharacterSearchSerializer(CharacterBaseSerializer):
 
 # 유저 프로필 캐릭터 조회용
 class UserProfileCharacterSerializer(serializers.ModelSerializer):
+    hashtags = HashtagSerializer(many=True, read_only=True)
+    
     class Meta:
         model = Character
-        fields = ["character_id", "name", "character_image"]
+        fields = ["character_id", "title", "name", "character_image", "presentation", "hashtags"]

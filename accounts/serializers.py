@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate
 from characters.serializers import UserProfileCharacterSerializer
+from .models import Follow, User, ChatProfile
 
 User = get_user_model()
 
@@ -96,6 +97,11 @@ class DeactivateAccountSerializer(serializers.Serializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     profile_picture = serializers.ImageField(required=False)
     characters = serializers.SerializerMethodField()
+    is_following = serializers.SerializerMethodField()  # 팔로잉 유/무 확인
+    followers_count = serializers.SerializerMethodField()
+    following_count = serializers.SerializerMethodField()
+    followers = serializers.SerializerMethodField()
+    followings = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -105,21 +111,100 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "introduce",
             "profile_picture",
             "characters",
+            "is_following",
+            "followers_count",
+            "following_count",
+            "followings",
+            "followers",
         ]
 
     def get_characters(self, obj):
         queryset = obj.characters.filter(is_character_public=True)
         return UserProfileCharacterSerializer(queryset, many=True).data
 
+    def get_is_following(self, obj):
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            return Follow.objects.filter(from_user=request.user, to_user=obj).exists()
+        return False
 
-# 내 프로필 조회
+    def get_followers_count(self, obj):
+        return obj.followers.count()
+
+    def get_following_count(self, obj):
+        return obj.following.count()
+
+    def get_followers(self, obj):
+        # Follow 모델의 from_user가 팔로워
+        followers = obj.followers.select_related("from_user")
+        users = [follow.from_user for follow in followers]
+        return SimpleUserSerializer(users, many=True).data
+
+    def get_followings(self, obj):
+        # Follow 모델의 to_user가 팔로우 대상
+        followings = obj.following.select_related("to_user")
+        users = [follow.to_user for follow in followings]
+        return SimpleUserSerializer(users, many=True).data
+
+
 class MyProfileSerializer(UserProfileSerializer):
+
     class Meta(UserProfileSerializer.Meta):
         fields = UserProfileSerializer.Meta.fields + [
             "birth_date",
             "gender",
         ]
 
-    def get_characters(self, obj):
-        queryset = obj.characters.all()
-        return UserProfileCharacterSerializer(queryset, many=True).data
+
+# 팔로우
+class FollowSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(write_only=True)
+
+    class Meta:
+        model = Follow
+        fields = ["user_id", "from_user", "to_user", "created_at"]
+        read_only_fields = ["from_user", "to_user", "created_at"]
+
+    def validate_user_id(self, value):
+        request_user = self.context["request"].user
+        try:
+            to_user = User.objects.get(id=value)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("존재하지 않는 사용자입니다.")
+
+        if not to_user.is_active:
+            raise serializers.ValidationError("탈퇴한 사용자는 팔로우할 수 없습니다.")
+
+        if request_user.id == value:
+            raise serializers.ValidationError("자기 자신을 팔로우할 수 없습니다.")
+
+        return value
+
+    def create(self, validated_data):
+        from_user = self.context["request"].user
+        to_user = User.objects.get(id=validated_data["user_id"])
+        follow, created = Follow.objects.get_or_create(
+            from_user=from_user, to_user=to_user
+        )
+        return follow
+
+
+# 유저 간단 정보만 보여줄 때 사용하는 Serializer
+class SimpleUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "nickname", "profile_picture"]
+
+
+# 대화프로필
+class ChatProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChatProfile
+        fields = [
+            "uuid",
+            "chat_nickname",
+            "chat_description",
+            "chat_profile_picture",
+            "is_default",
+        ]
+        read_only_fields = ["uuid"]

@@ -14,6 +14,13 @@ urlpatterns = [
     path("kakao/login/", views.KakaoLogin.as_view(), name="kakao_login"),
     path("kakao/redirect/", views.kakao_redirect, name="kakao_redirect"),
     path("google/login/", views.GoogleLogin.as_view(), name="google_login"),
+    # 팔로우
+    path("follow/", views.FollowToggleView.as_view()),
+    # 대화프로필
+    path("chat_profiles/", views.ChatProfileListCreateView.as_view()),
+    path("chat_profiles/<uuid:chatprofile_uuid>/", views.ChatProfileDetailView.as_view()),
+    # 프로필조회
+    path("my_profile/", views.MyProfileView.as_view()),
     path("<str:nickname>/", views.UserProfileView.as_view()),
 ]
 

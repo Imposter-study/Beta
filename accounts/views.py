@@ -366,8 +366,8 @@ class FollowToggleView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         from_user = request.user
-        to_user_id = serializer.validated_data["user_id"]
-        to_user = get_object_or_404(User, id=to_user_id)
+        to_user_id = serializer.validated_data["uuid"]
+        to_user = get_object_or_404(User, uuid=to_user_id)
 
         follow, created = Follow.objects.get_or_create(
             from_user=from_user, to_user=to_user
@@ -425,7 +425,9 @@ class ChatProfileDetailView(APIView):
         responses={200: ChatProfileSerializer},
     )
     def put(self, request, chatprofile_uuid):
-        profile = get_object_or_404(ChatProfile, uuid=chatprofile_uuid, user=request.user)
+        profile = get_object_or_404(
+            ChatProfile, uuid=chatprofile_uuid, user=request.user
+        )
         serializer = ChatProfileSerializer(profile, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -438,6 +440,8 @@ class ChatProfileDetailView(APIView):
         responses={204: None},
     )
     def delete(self, request, chatprofile_uuid):
-        profile = get_object_or_404(ChatProfile, uuid=chatprofile_uuid, user=request.user)
+        profile = get_object_or_404(
+            ChatProfile, uuid=chatprofile_uuid, user=request.user
+        )
         profile.delete()
         return Response(status=204)

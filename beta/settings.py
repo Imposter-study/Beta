@@ -93,6 +93,8 @@ REST_FRAMEWORK = {
 
 
 SIMPLE_JWT = {
+    "USER_ID_FIELD": "uuid",
+    "USER_ID_CLAIM": "user_uuid",
     "SIGNING_KEY": config("SIGNING_KEY"),
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=config("ACCESS_TOKEN_LIFETIME_MINUTES", cast=int)),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=config("REFRESH_TOKEN_LIFETIME_DAYS", cast=int)),

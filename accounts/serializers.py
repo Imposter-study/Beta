@@ -22,6 +22,7 @@ class SignUpSerializer(serializers.ModelSerializer):
             "birth_date",
             "gender",
             "introduce",
+            "profile_picture",
         ]
         extra_kwargs = {
             "password": {"write_only": True},

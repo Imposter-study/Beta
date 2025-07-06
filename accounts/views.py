@@ -38,8 +38,27 @@ from drf_spectacular.utils import (
 class UserCreateView(APIView):
     @extend_schema(
         summary="회원가입",
-        description="새로운 ExampleModel을 생성하는 API입니다.",
-        request=SignUpSerializer,
+        description=(
+            "새로운 유저를 생성하는 API입니다.\n"
+            "- multipart/form-data 형식으로 요청해야 하며,\n"
+            "- 이미지 파일은 `profile_picture` 필드에 binary 형식으로 전달합니다."
+        ),
+        request={
+            'multipart/form-data': {
+                'type': 'object',
+                'properties': {
+                    'username': {'type': 'string', 'description': '사용자 ID'},
+                    'password': {'type': 'string', 'description': '비밀번호'},
+                    'password_confirm': {'type': 'string', 'description': '비밀번호 확인'},
+                    'nickname': {'type': 'string', 'description': '닉네임'},
+                    'birth_date': {'type': 'string', 'format': 'date', 'description': '생년월일 YYYY-MM-DD'},
+                    'gender': {'type': 'string', 'enum': ['M', 'F', 'O'], 'description': '성별'},
+                    'introduce': {'type': 'string', 'description': '자기소개'},
+                    'profile_picture': {'type': 'string', 'format': 'binary', 'description': '프로필 사진'},
+                },
+                'required': ['username', 'password', 'password_confirm'],
+            }
+        },
         responses={201: OpenApiResponse(description="회원가입 성공")},
     )
     def post(self, request):

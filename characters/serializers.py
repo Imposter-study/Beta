@@ -148,7 +148,7 @@ class CharacterSerializer(CharacterBaseSerializer):
     def get_is_scrapped(self, obj):
         request = self.context.get("request")
         if request and request.user.is_authenticated:
-            return obj.scrapped_by.filter(id=request.user.id).exists()
+            return obj.scrapped_by.filter(uuid=request.user.uuid).exists()
         return False
 
     # multipart/form-data -> Json문자열 -> json.loads():딕서너리or리스트로 변환

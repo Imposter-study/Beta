@@ -36,6 +36,8 @@ from drf_spectacular.utils import (
 
 
 class UserCreateView(APIView):
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
     @extend_schema(
         summary="회원가입",
         description="새로운 ExampleModel을 생성하는 API입니다.",
@@ -425,7 +427,9 @@ class ChatProfileDetailView(APIView):
         responses={200: ChatProfileSerializer},
     )
     def put(self, request, chatprofile_uuid):
-        profile = get_object_or_404(ChatProfile, uuid=chatprofile_uuid, user=request.user)
+        profile = get_object_or_404(
+            ChatProfile, uuid=chatprofile_uuid, user=request.user
+        )
         serializer = ChatProfileSerializer(profile, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -438,6 +442,8 @@ class ChatProfileDetailView(APIView):
         responses={204: None},
     )
     def delete(self, request, chatprofile_uuid):
-        profile = get_object_or_404(ChatProfile, uuid=chatprofile_uuid, user=request.user)
+        profile = get_object_or_404(
+            ChatProfile, uuid=chatprofile_uuid, user=request.user
+        )
         profile.delete()
         return Response(status=204)

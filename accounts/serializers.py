@@ -11,6 +11,7 @@ User = get_user_model()
 class SignUpSerializer(serializers.ModelSerializer):
     password_confirm = serializers.CharField(write_only=True)
     nickname = serializers.CharField(required=False)
+    profile_picture = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = User
@@ -22,6 +23,7 @@ class SignUpSerializer(serializers.ModelSerializer):
             "birth_date",
             "gender",
             "introduce",
+            "profile_picture",
         ]
         extra_kwargs = {
             "password": {"write_only": True},
@@ -95,7 +97,7 @@ class DeactivateAccountSerializer(serializers.Serializer):
 
 # 타인 프로필 조회
 class UserProfileSerializer(serializers.ModelSerializer):
-    profile_picture = serializers.ImageField(required=False)
+    profile_picture = serializers.ImageField(required=False, allow_null=True)
     characters = serializers.SerializerMethodField()
     is_following = serializers.SerializerMethodField()  # 팔로잉 유/무 확인
     followers_count = serializers.SerializerMethodField()

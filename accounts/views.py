@@ -63,11 +63,11 @@ class UserCreateView(APIView):
         },
     ),
 )
-# 내가 나의 프로필을 볼때, 타인의 프로필을 볼때
+# 내가 타인의 프로필을 볼때
 class UserProfileView(APIView):
 
-    def get(self, request, nickname):
-        user = get_object_or_404(User, nickname=nickname)
+    def get(self, request, uuid):
+        user = get_object_or_404(User, uuid=uuid)
 
         serializer = UserProfileSerializer(user)
 

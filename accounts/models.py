@@ -23,8 +23,8 @@ class User(AbstractUser):
     ]
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
-    username = models.CharField(max_length=20, unique=True)
-    nickname = models.CharField(max_length=30, unique=True, blank=True, null=True)
+    username = models.CharField(max_length=50, unique=True)
+    nickname = models.CharField(max_length=50, unique=True, blank=True, null=True)
     gender = models.CharField(default="O", choices=GENDER_CHOICES, max_length=1)
     email = models.EmailField(blank=True, null=True, unique=False)
     birth_date = models.DateField(null=True, blank=True)
@@ -53,9 +53,9 @@ class User(AbstractUser):
 
     def mark_as_deactivated(self):
         self.is_active = False
-        self.username = f"deleted_user_{self.id}"
+        self.username = f"deleted_user_{self.uuid}"
         self.nickname = "탈퇴한 사용자"  # 탈퇴 사용자는 나중에 "탈퇴한 사용자"로 표시되도록 프론트에서 조건 분기하면 됩니다.
-        self.email = f"deleted_{self.id}@deleted.com"
+        self.email = f"deleted_{self.uuid}@deleted.com"
         self.introduce = None
         self.profile_picture = None
         self.birth_date = None

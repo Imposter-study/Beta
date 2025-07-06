@@ -193,7 +193,7 @@ class FollowSerializer(serializers.ModelSerializer):
 class SimpleUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "nickname", "profile_picture"]
+        fields = ["uuid", "nickname", "profile_picture"]
 
 
 # 대화프로필

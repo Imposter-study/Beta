@@ -22,6 +22,7 @@ class User(AbstractUser):
         "cow",
     ]
 
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
     username = models.CharField(max_length=20, unique=True)
     nickname = models.CharField(max_length=30, unique=True, blank=True, null=True)
     gender = models.CharField(default="O", choices=GENDER_CHOICES, max_length=1)

@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import environ
 import os
 from datetime import timedelta
-
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -93,11 +93,11 @@ REST_FRAMEWORK = {
 
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=600),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
-    "ROTATE_REFRESH_TOKENS": True,  # 토큰갱신후 블랙리스트 적용
-    "BLACKLIST_AFTER_ROTATION": True,  # 사용자가 로그인할 때마다 `last_login` 필드 업데이트
-    "AUTH_HEADER_TYPES": ("Bearer",),
+    "SIGNING_KEY": config("SIGNING_KEY"),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=config("ACCESS_TOKEN_LIFETIME_MINUTES", cast=int)),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=config("REFRESH_TOKEN_LIFETIME_DAYS", cast=int)),
+    "ALGORITHM": config("JWT_ALGORITHM", default="HS256"),
+    "AUTH_HEADER_TYPES": (config("JWT_AUTH_HEADER_TYPE", default="Bearer"),),
 }
 
 

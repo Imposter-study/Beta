@@ -21,7 +21,7 @@ urlpatterns = [
     path("chat_profiles/<uuid:chatprofile_uuid>/", views.ChatProfileDetailView.as_view()),
     # 프로필조회
     path("my_profile/", views.MyProfileView.as_view()),
-    path("<str:nickname>/", views.UserProfileView.as_view()),
+    path("<uuid:uuid>/", views.UserProfileView.as_view()),
 ]
 
 # 개발용 미디어 파일 제공 설정

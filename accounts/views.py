@@ -40,8 +40,27 @@ class UserCreateView(APIView):
 
     @extend_schema(
         summary="회원가입",
-        description="새로운 ExampleModel을 생성하는 API입니다.",
-        request=SignUpSerializer,
+        description=(
+            "새로운 유저를 생성하는 API입니다.\n"
+            "- multipart/form-data 형식으로 요청해야 하며,\n"
+            "- 이미지 파일은 `profile_picture` 필드에 binary 형식으로 전달합니다."
+        ),
+        request={
+            'multipart/form-data': {
+                'type': 'object',
+                'properties': {
+                    'username': {'type': 'string', 'description': '사용자 ID'},
+                    'password': {'type': 'string', 'description': '비밀번호'},
+                    'password_confirm': {'type': 'string', 'description': '비밀번호 확인'},
+                    'nickname': {'type': 'string', 'description': '닉네임'},
+                    'birth_date': {'type': 'string', 'format': 'date', 'description': '생년월일 YYYY-MM-DD'},
+                    'gender': {'type': 'string', 'enum': ['M', 'F', 'O'], 'description': '성별'},
+                    'introduce': {'type': 'string', 'description': '자기소개'},
+                    'profile_picture': {'type': 'string', 'format': 'binary', 'description': '프로필 사진'},
+                },
+                'required': ['username', 'password', 'password_confirm'],
+            }
+        },
         responses={201: OpenApiResponse(description="회원가입 성공")},
     )
     def post(self, request):
@@ -65,11 +84,11 @@ class UserCreateView(APIView):
         },
     ),
 )
-# 내가 나의 프로필을 볼때, 타인의 프로필을 볼때
+# 내가 타인의 프로필을 볼때
 class UserProfileView(APIView):
 
-    def get(self, request, nickname):
-        user = get_object_or_404(User, nickname=nickname)
+    def get(self, request, uuid):
+        user = get_object_or_404(User, uuid=uuid)
 
         serializer = UserProfileSerializer(user)
 
@@ -368,8 +387,8 @@ class FollowToggleView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         from_user = request.user
-        to_user_id = serializer.validated_data["user_id"]
-        to_user = get_object_or_404(User, id=to_user_id)
+        to_user_id = serializer.validated_data["uuid"]
+        to_user = get_object_or_404(User, uuid=to_user_id)
 
         follow, created = Follow.objects.get_or_create(
             from_user=from_user, to_user=to_user

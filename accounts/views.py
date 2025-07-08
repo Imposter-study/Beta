@@ -159,6 +159,7 @@ class LoginView(APIView):
                     "refresh": str(refresh),
                     "access": str(refresh.access_token),
                     "nickname": user.nickname,
+                    "uuid": str(user.uuid),
                 },
                 status=status.HTTP_200_OK,
             )

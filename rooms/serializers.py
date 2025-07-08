@@ -161,12 +161,6 @@ class ChatUpdateResponseSerializer(ChatDetailSerializer):
     class Meta(ChatDetailSerializer.Meta):
         fields = [
             "room_id",
-            "user_id",
-            "character_id",
-            "character_title",
-            "character_name",
-            "user_message",
-            "ai_response",
             "created_at",
         ]
 

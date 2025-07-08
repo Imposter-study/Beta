@@ -36,6 +36,8 @@ from drf_spectacular.utils import (
 
 
 class UserCreateView(APIView):
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
     @extend_schema(
         summary="회원가입",
         description=(

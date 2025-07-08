@@ -69,7 +69,7 @@ class User(AbstractUser):
         self.save()
 
     def is_ready_for_deletion(self):
-        if self.is_deactivated and self.deactivated_at:
+        if not self.is_active and self.deactivated_at:
             return timezone.now() >= self.deactivated_at + timedelta(days=90)
         return False
 

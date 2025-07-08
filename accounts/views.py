@@ -390,6 +390,21 @@ class GoogleLogin(SocialLoginView):
 class SocialSignupAddInfoView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="소셜 회원가입 추가 정보 입력",
+        description="소셜 로그인 후 추가 정보(성별, 생년월일 등)를 입력받아 회원 정보를 완성. 헤더에 JWT access 토큰 필요.",
+        request=SocialSignupExtraSerializer,
+        responses={
+            200: OpenApiResponse(response=None, description="추가 정보 입력 완료"),
+            400: OpenApiResponse(description="유효하지 않은 입력값"),
+            401: OpenApiResponse(description="인증 실패(JWT 누락)"),
+        },
+        tags=["소셜 로그인"],
+        examples=[
+            {"name": "요청 예시", "value": {"gender": "M", "birth_date": "1990-01-01"}},
+            {"name": "응답 예시", "value": {"detail": "추가 정보 입력 완료"}},
+        ],
+    )
     def post(self, request):
         serializer = SocialSignupExtraSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -397,7 +412,7 @@ class SocialSignupAddInfoView(APIView):
         user.gender = serializer.validated_data["gender"]
         user.birth_date = serializer.validated_data["birth_date"]
         user.save()
-        return Response({"detail": "추가 정보 입력 완료"})
+        return Response({"detail": "추가 정보 입력 완료"}, status=status.HTTP_200_OK)
 
 
 # 팔로우/언팔로우 토글

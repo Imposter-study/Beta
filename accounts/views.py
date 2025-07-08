@@ -46,19 +46,34 @@ class UserCreateView(APIView):
             "- 이미지 파일은 `profile_picture` 필드에 binary 형식으로 전달합니다."
         ),
         request={
-            'multipart/form-data': {
-                'type': 'object',
-                'properties': {
-                    'username': {'type': 'string', 'description': '사용자 ID'},
-                    'password': {'type': 'string', 'description': '비밀번호'},
-                    'password_confirm': {'type': 'string', 'description': '비밀번호 확인'},
-                    'nickname': {'type': 'string', 'description': '닉네임'},
-                    'birth_date': {'type': 'string', 'format': 'date', 'description': '생년월일 YYYY-MM-DD'},
-                    'gender': {'type': 'string', 'enum': ['M', 'F', 'O'], 'description': '성별'},
-                    'introduce': {'type': 'string', 'description': '자기소개'},
-                    'profile_picture': {'type': 'string', 'format': 'binary', 'description': '프로필 사진'},
+            "multipart/form-data": {
+                "type": "object",
+                "properties": {
+                    "username": {"type": "string", "description": "사용자 ID"},
+                    "password": {"type": "string", "description": "비밀번호"},
+                    "password_confirm": {
+                        "type": "string",
+                        "description": "비밀번호 확인",
+                    },
+                    "nickname": {"type": "string", "description": "닉네임"},
+                    "birth_date": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "생년월일 YYYY-MM-DD",
+                    },
+                    "gender": {
+                        "type": "string",
+                        "enum": ["M", "F", "O"],
+                        "description": "성별",
+                    },
+                    "introduce": {"type": "string", "description": "자기소개"},
+                    "profile_picture": {
+                        "type": "string",
+                        "format": "binary",
+                        "description": "프로필 사진",
+                    },
                 },
-                'required': ['username', 'password', 'password_confirm'],
+                "required": ["username", "password", "password_confirm"],
             }
         },
         responses={201: OpenApiResponse(description="회원가입 성공")},
@@ -297,7 +312,7 @@ class KakaoLogin(SocialLoginView):
                 {
                     "is_signup": False,
                     "kakao_id": social_account.uid,
-                    "nickname": user.nickname,
+                    "uuid": user.uuid,
                     "access": access_token,
                     "refresh": refresh_token,
                 },
@@ -306,7 +321,7 @@ class KakaoLogin(SocialLoginView):
 
         # 기존 회원이면 토큰 포함 정상 로그인 응답
         response.data["is_signup"] = True
-        response.data["nickname"] = user.nickname
+        response.data["uuid"] = user.uuid
         response.data["access"] = access_token
         response.data["refresh"] = refresh_token
         return response
@@ -357,7 +372,7 @@ class GoogleLogin(SocialLoginView):
                 {
                     "is_signup": False,
                     "google_id": social_account.uid,
-                    "nickname": user.nickname,
+                    "uuid": user.uuid,
                     "access": access_token,
                     "refresh": refresh_token,
                 },
@@ -366,7 +381,7 @@ class GoogleLogin(SocialLoginView):
 
         # 기존 회원이면 토큰 포함 정상 로그인 응답
         response.data["is_signup"] = True
-        response.data["nickname"] = user.nickname
+        response.data["uuid"] = user.uuid
         response.data["access"] = access_token
         response.data["refresh"] = refresh_token
         return response

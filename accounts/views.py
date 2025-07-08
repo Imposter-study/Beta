@@ -26,12 +26,14 @@ from .serializers import (
     DeactivateAccountSerializer,
     FollowSerializer,
     ChatProfileSerializer,
+    SocialSignupExtraSerializer,
 )
 
 from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
     OpenApiResponse,
+    OpenApiExample,
 )
 
 
@@ -401,8 +403,16 @@ class SocialSignupAddInfoView(APIView):
         },
         tags=["소셜 로그인"],
         examples=[
-            {"name": "요청 예시", "value": {"gender": "M", "birth_date": "1990-01-01"}},
-            {"name": "응답 예시", "value": {"detail": "추가 정보 입력 완료"}},
+            OpenApiExample(
+                name="요청 예시",
+                value={"gender": "M", "birth_date": "1990-01-01"},
+                request_only=True,
+            ),
+            OpenApiExample(
+                name="응답 예시",
+                value={"detail": "추가 정보 입력 완료"},
+                response_only=True,
+            ),
         ],
     )
     def post(self, request):

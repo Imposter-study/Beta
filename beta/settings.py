@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import environ
 import os
 from datetime import timedelta
-from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -95,11 +94,15 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     "USER_ID_FIELD": "uuid",
     "USER_ID_CLAIM": "user_uuid",
-    "SIGNING_KEY": config("SIGNING_KEY"),
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=config("ACCESS_TOKEN_LIFETIME_MINUTES", cast=int)),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=config("REFRESH_TOKEN_LIFETIME_DAYS", cast=int)),
-    "ALGORITHM": config("JWT_ALGORITHM", default="HS256"),
-    "AUTH_HEADER_TYPES": (config("JWT_AUTH_HEADER_TYPE", default="Bearer"),),
+    "SIGNING_KEY": env("SIGNING_KEY"),
+    "ACCESS_TOKEN_LIFETIME": timedelta(
+        minutes=env("ACCESS_TOKEN_LIFETIME_MINUTES", cast=int)
+    ),
+    "REFRESH_TOKEN_LIFETIME": timedelta(
+        days=env("REFRESH_TOKEN_LIFETIME_DAYS", cast=int)
+    ),
+    "ALGORITHM": env("JWT_ALGORITHM", default="HS256"),
+    "AUTH_HEADER_TYPES": (env("JWT_AUTH_HEADER_TYPE", default="Bearer"),),
 }
 
 

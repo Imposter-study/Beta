@@ -210,3 +210,13 @@ class ChatProfileSerializer(serializers.ModelSerializer):
             "is_default",
         ]
         read_only_fields = ["uuid"]
+
+
+# 소셜 회원가입 추가 정보
+class SocialSignupExtraSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "birth_date",
+            "gender",
+        ]

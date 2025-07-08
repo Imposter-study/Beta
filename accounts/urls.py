@@ -14,6 +14,11 @@ urlpatterns = [
     path("kakao/login/", views.KakaoLogin.as_view(), name="kakao_login"),
     path("kakao/redirect/", views.kakao_redirect, name="kakao_redirect"),
     path("google/login/", views.GoogleLogin.as_view(), name="google_login"),
+    path(
+        "social/signup/add_info/",
+        views.SocialSignupAddInfoView.as_view(),
+        name="social_signup_add_info",
+    ),
     # 팔로우
     path("follow/", views.FollowToggleView.as_view()),
     # 대화프로필

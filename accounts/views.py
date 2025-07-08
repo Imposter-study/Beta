@@ -387,6 +387,19 @@ class GoogleLogin(SocialLoginView):
         return response
 
 
+class SocialSignupAddInfoView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = SocialSignupExtraSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = request.user
+        user.gender = serializer.validated_data["gender"]
+        user.birth_date = serializer.validated_data["birth_date"]
+        user.save()
+        return Response({"detail": "추가 정보 입력 완료"})
+
+
 # 팔로우/언팔로우 토글
 class FollowToggleView(APIView):
     permission_classes = [IsAuthenticated]

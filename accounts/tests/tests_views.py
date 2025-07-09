@@ -4,12 +4,17 @@ from django.contrib.auth import get_user_model
 
 # 회원 가입 테스트
 class SignUpTest(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="testuser1",
+            password="1q2w3e4r!",
+        )
 
     # 회원가입 성공 테스트
     def test_signup_success(self):
         # 회원가입 데이터 기입
         signup_data = {
-            "username": "testuser1",
+            "username": "testuser2",
             "password": "1q2w3e4r!",
             "password_confirm": "1q2w3e4r!",
             # 선택 필드 예시 (필요시 추가)
@@ -26,4 +31,4 @@ class SignUpTest(TestCase):
 
         User = get_user_model()
         self.assertTrue(User.objects.filter(username="testuser1").exists())
-        print("\n회원가입 성공\n")
+        print("\n회원가입 성공")

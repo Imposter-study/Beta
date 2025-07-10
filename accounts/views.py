@@ -18,6 +18,14 @@ from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from allauth.socialaccount.providers.kakao import views as kakao_view
 from allauth.socialaccount.providers.google import views as google_view
 
+from accounts.docs.accounts_schemas import (
+    signup_schema,
+    user_profile_schema,
+    my_profile_schema,
+    update_profile_schema,
+    deactivate_account_schema,
+)
+
 from .models import User, Follow, ChatProfile
 from .serializers import (
     SignUpSerializer,
@@ -33,19 +41,20 @@ from .serializers import (
 
 from drf_spectacular.utils import (
     extend_schema,
-    extend_schema_view,
     OpenApiResponse,
     OpenApiExample,
 )
 
 
+# 회원가입, 회원조회, 회원수정, 회원탈퇴
 class UserViewSet(GenericViewSet):
     queryset = User.objects.all()
     serializer_class = MyProfileSerializer
+    lookup_field = "uuid"
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_permissions(self):
-        if self.action in ["signup", "user_profile"]:
+        if self.action in ["signup", "retrieve"]:
             permission_classes = [AllowAny]
         elif self.action in ["my_profile", "update_profile", "deactivate_account"]:
             permission_classes = [IsAuthenticated]
@@ -56,7 +65,9 @@ class UserViewSet(GenericViewSet):
         for permission in permission_classes:
             permission_classes_list.append(permission())
         return permission_classes_list
-    
+
+    # 회원가입
+    @extend_schema(**signup_schema)
     @action(detail=False, methods=["post"], url_path="signup")
     def signup(self, request):
         serializer = SignUpSerializer(data=request.data)
@@ -66,28 +77,30 @@ class UserViewSet(GenericViewSet):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=["get"], url_path="<uuid:uuid>")
-    def user_profile(self, request, uuid):
-        user = get_object_or_404(User, uuid=uuid)
-        serializer = UserProfileSerializer(user)
+    # 회원 조회 (기본 retrieve 오버라이드)
+    @extend_schema(**user_profile_schema)
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = UserProfileSerializer(instance)
         return Response(serializer.data)
 
-    @action(detail=False, methods=["get"], url_path="my_profile")
+    # 내 프로필 조회 및 수정
+    @extend_schema(methods=["GET"], **my_profile_schema)
+    @extend_schema(methods=["PUT"], **update_profile_schema)
+    @action(detail=False, methods=["get", "put"], url_path="my_profile")
     def my_profile(self, request):
         user = request.user
-        serializer = MyProfileSerializer(user)
-        return Response(serializer.data)
-
-    @action(detail=False, methods=["put"], url_path="my_profile")
-    def update_profile(self, request):
-        user = request.user
-        serializer = MyProfileSerializer(user, data=request.data, partial=True)
-        if serializer.is_valid(raise_exception=True):
+        if request.method == "GET":
+            serializer = MyProfileSerializer(user)
+            return Response(serializer.data)
+        elif request.method == "PUT":
+            serializer = MyProfileSerializer(user, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.data)
 
+    # 회원 탈퇴
+    @extend_schema(**deactivate_account_schema)
     @action(detail=False, methods=["post"], url_path="delete")
     def deactivate_account(self, request):
         user = request.user

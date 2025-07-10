@@ -1,7 +1,8 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
-from accounts.serializers import MyProfileSerializer
+from accounts.serializers import MyProfileSerializer, UserProfileSerializer
+
 
 # 회원 가입 테스트
 class SignUpTest(TestCase):
@@ -33,7 +34,6 @@ class SignUpTest(TestCase):
 
         User = get_user_model()
         self.assertTrue(User.objects.filter(username="testuser1").exists())
-        
 
     # 유저네임 중복 테스트
     def test_signup_username_duplicate(self):
@@ -79,8 +79,8 @@ class SignUpTest(TestCase):
         self.assertEqual(response.status_code, 400, "비밀번호 일치")
 
 
-#회원 조회(본인) 테스트
-class UserProfileTest(TestCase):
+# 회원 조회(본인) 테스트
+class MyProfileTest(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(
             username="testuser1",
@@ -94,9 +94,35 @@ class UserProfileTest(TestCase):
         response = self.client.get(
             "/api/v1/accounts/my_profile/",
             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-            content_type="application/json"
+            content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
 
         serializer = MyProfileSerializer(instance=self.user)
+        print(serializer.data)
+
+
+# 회원 조회(타인) 테스트
+class UserProfileTest(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="testuser1",
+            password="1q2w3e4r!",
+        )
+        refresh = RefreshToken.for_user(self.user)
+        self.access_token = str(refresh.access_token)
+
+    def test_user_profile(self):
+        print("\n타인 조회 테스트")
+        other_user = get_user_model().objects.create_user(
+            username="other", password="1234test!"
+        )
+        response = self.client.get(
+            f"/api/v1/accounts/{other_user.uuid}/",
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        serializer = UserProfileSerializer(instance=other_user)
         print(serializer.data)

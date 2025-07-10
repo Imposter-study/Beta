@@ -3,11 +3,13 @@ from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse
 
 from rest_framework.views import APIView
+from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated, AllowAny
 
 # 소셜 로그인 관련
 from dj_rest_auth.registration.views import SocialLoginView
@@ -37,122 +39,69 @@ from drf_spectacular.utils import (
 )
 
 
-class UserCreateView(APIView):
+class UserViewSet(GenericViewSet):
+    queryset = User.objects.all()
+    serializer_class = MyProfileSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
-    @extend_schema(
-        summary="회원가입",
-        description=(
-            "새로운 유저를 생성하는 API입니다.\n"
-            "- multipart/form-data 형식으로 요청해야 하며,\n"
-            "- 이미지 파일은 `profile_picture` 필드에 binary 형식으로 전달합니다."
-        ),
-        request={
-            "multipart/form-data": {
-                "type": "object",
-                "properties": {
-                    "username": {"type": "string", "description": "사용자 ID"},
-                    "password": {"type": "string", "description": "비밀번호"},
-                    "password_confirm": {
-                        "type": "string",
-                        "description": "비밀번호 확인",
-                    },
-                    "nickname": {"type": "string", "description": "닉네임"},
-                    "birth_date": {
-                        "type": "string",
-                        "format": "date",
-                        "description": "생년월일 YYYY-MM-DD",
-                    },
-                    "gender": {
-                        "type": "string",
-                        "enum": ["M", "F", "O"],
-                        "description": "성별",
-                    },
-                    "introduce": {"type": "string", "description": "자기소개"},
-                    "profile_picture": {
-                        "type": "string",
-                        "format": "binary",
-                        "description": "프로필 사진",
-                    },
-                },
-                "required": ["username", "password", "password_confirm"],
-            }
-        },
-        responses={201: OpenApiResponse(description="회원가입 성공")},
-    )
-    def post(self, request):
-        serializer = SignUpSerializer(data=request.data)
+    def get_permissions(self):
+        if self.action in ["signup", "user_profile"]:
+            permission_classes = [AllowAny]
+        elif self.action in ["my_profile", "update_profile", "deactivate_account"]:
+            permission_classes = [IsAuthenticated]
+        else:
+            permission_classes = [IsAuthenticated]
 
-        if serializer.is_valid():
+        permission_classes_list = []
+        for permission in permission_classes:
+            permission_classes_list.append(permission())
+        return permission_classes_list
+    
+    @action(detail=False, methods=["post"], url_path="signup")
+    def signup(self, request):
+        serializer = SignUpSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-@extend_schema_view(
-    get=extend_schema(
-        summary="다른 유저 조회",
-        description="본인 혹은 타인의 프로필을 조회합니다.",
-        responses={
-            200: UserProfileSerializer,
-            401: OpenApiResponse(description="로그인이 필요합니다."),
-            404: OpenApiResponse(description="사용자를 찾을 수 없습니다."),
-        },
-    ),
-)
-# 내가 타인의 프로필을 볼때
-class UserProfileView(APIView):
-
-    def get(self, request, uuid):
+    @action(detail=False, methods=["get"], url_path="<uuid:uuid>")
+    def user_profile(self, request, uuid):
         user = get_object_or_404(User, uuid=uuid)
-
         serializer = UserProfileSerializer(user)
-
         return Response(serializer.data)
 
-
-@extend_schema_view(
-    get=extend_schema(
-        summary="사용자 프로필 조회",
-        description="본인 프로필을 조회합니다.",
-        responses={
-            200: MyProfileSerializer,
-            401: OpenApiResponse(description="로그인이 필요합니다."),
-            404: OpenApiResponse(description="사용자를 찾을 수 없습니다."),
-        },
-    ),
-    put=extend_schema(
-        summary="사용자 프로필 수정",
-        description="본인 프로필을 수정합니다. 타인은 수정 불가.",
-        request=MyProfileSerializer,
-        responses={
-            200: MyProfileSerializer,
-            400: OpenApiResponse(description="잘못된 요청입니다."),
-            403: OpenApiResponse(description="수정 권한이 없습니다."),
-            404: OpenApiResponse(description="사용자를 찾을 수 없습니다."),
-        },
-    ),
-)
-class MyProfileView(APIView):
-    parser_classes = [MultiPartParser, FormParser, JSONParser]
-
-    def get(self, request):
+    @action(detail=False, methods=["get"], url_path="my_profile")
+    def my_profile(self, request):
         user = request.user
         serializer = MyProfileSerializer(user)
-
         return Response(serializer.data)
 
-    def put(self, request):
+    @action(detail=False, methods=["put"], url_path="my_profile")
+    def update_profile(self, request):
         user = request.user
-
         serializer = MyProfileSerializer(user, data=request.data, partial=True)
-
         if serializer.is_valid(raise_exception=True):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    @action(detail=False, methods=["post"], url_path="delete")
+    def deactivate_account(self, request):
+        user = request.user
+        serializer = DeactivateAccountSerializer(
+            user, data=request.data, context={"request": request}
+        )
+        if serializer.is_valid(raise_exception=True):
+            user.mark_as_deactivated()
+            return Response(
+                {"detail": "계정이 탈퇴 처리되었습니다. 90일 후 완전 삭제됩니다."},
+                status=status.HTTP_200_OK,
+            )
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # 로그인
@@ -247,33 +196,6 @@ class PasswordChangeView(APIView):
             user.set_password(serializer.validated_data["new_password"])
             user.save()
             return Response({"detail": "Password changed successfully."})
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-# 회원 탈퇴
-class DeactivateAccountView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    @extend_schema(
-        summary="회원탈퇴!!!",
-        description="비밀번호를 입력하여 계정을 탈퇴합니다",
-        request=DeactivateAccountSerializer,
-        responses={
-            200: OpenApiResponse(description="탈퇴 완료."),
-            400: OpenApiResponse(description="비밀번호가 일치하지 않습니다."),
-        },
-    )
-    def post(self, request):
-        serializer = DeactivateAccountSerializer(
-            data=request.data, context={"request": request}
-        )
-        if serializer.is_valid():
-            user = request.user
-            user.mark_as_deactivated()
-            return Response(
-                {"detail": "계정이 탈퇴 처리되었습니다. 90일 후 완전 삭제됩니다."},
-                status=status.HTTP_200_OK,
-            )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

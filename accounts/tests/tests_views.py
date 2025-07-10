@@ -85,6 +85,10 @@ class MyProfileTest(TestCase):
         self.user = get_user_model().objects.create_user(
             username="testuser1",
             password="1q2w3e4r!",
+            nickname="테스트닉네임",
+            birth_date="2000-01-01",
+            gender="M",
+            introduce="안녕하세요",
         )
         refresh = RefreshToken.for_user(self.user)
         self.access_token = str(refresh.access_token)
@@ -98,6 +102,24 @@ class MyProfileTest(TestCase):
         )
         self.assertEqual(response.status_code, 200)
 
+        serializer = MyProfileSerializer(instance=self.user)
+        print(serializer.data)
+
+    def test_user_profile_fix(self):
+        print("\n본인 프로필 수정 테스트")
+        response = self.client.put(
+            "/api/v1/accounts/my_profile/",
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+            content_type="application/json",
+            data={
+                "nickname": "testnickname1",
+                "birth_date": "2000-01-01",
+                "gender": "M",
+                "introduce": "안녕하세요!!",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
         serializer = MyProfileSerializer(instance=self.user)
         print(serializer.data)
 
@@ -126,3 +148,27 @@ class UserProfileTest(TestCase):
 
         serializer = UserProfileSerializer(instance=other_user)
         print(serializer.data)
+
+
+# 회원 탈퇴 테스트
+class UserDeleteTest(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="testuser1",
+            password="1q2w3e4r!",
+        )
+        refresh = RefreshToken.for_user(self.user)
+        self.access_token = str(refresh.access_token)
+
+    def test_user_delete(self):
+        print("\n회원 탈퇴 테스트")
+        response = self.client.post(
+            f"/api/v1/accounts/delete/",
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+            data={"password": "1q2w3e4r!"},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.is_active)

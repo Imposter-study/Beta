@@ -163,3 +163,74 @@ class UserDeleteTest(BaseTestCase):
         self.assertEqual(response.status_code, 200)
         self.user.refresh_from_db()
         self.assertFalse(self.user.is_active)
+
+
+# 로그인 테스트
+class LoginTest(BaseTestCase):
+    def setUp(self):
+        self.user = self.create_user()
+        self.access_token = self.get_access_token(self.user)
+
+    def test_login(self):
+        print("\n로그인 테스트")
+        response = self.client.post(
+            f"/api/v1/accounts/signin/",
+            data={"username": "testuser1", "password": "1q2w3e4r!"},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_login_fail(self):
+        print("\n로그인 실패 테스트")
+        response = self.client.post(
+            f"/api/v1/accounts/signin/",
+            data={"username": "testuser1", "password": "틀린 비밀번호"},
+        )
+        self.assertEqual(response.status_code, 400)
+
+
+# 로그아웃 테스트
+class LogoutTest(BaseTestCase):
+    def setUp(self):
+        self.user = self.create_user()
+        self.access_token = self.get_access_token(self.user)
+        self.refresh_token = RefreshToken.for_user(self.user)
+
+    def test_logout(self):
+        print("\n로그아웃 테스트")
+        response = self.client.post(
+            f"/api/v1/accounts/signout/",
+            data={"refresh": str(self.refresh_token)},
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 205)
+
+    def test_logout_fail(self):
+        print("\n로그아웃 실패 테스트")
+        response = self.client.post(
+            f"/api/v1/accounts/signout/",
+            data={"refresh": "invalid_refresh_token"},
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+
+
+# 비밀번호 수정 테스트
+class PasswordChangeTest(BaseTestCase):
+    def setUp(self):
+        self.user = self.create_user()
+        self.access_token = self.get_access_token(self.user)
+
+    def test_password_change(self):
+        print("\n비밀번호 수정 테스트")
+        response = self.client.put(
+            f"/api/v1/accounts/password/",
+            data={"old_password": "1q2w3e4r!", "new_password": "new_password"},
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+            content_type="application/json",
+        )
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("new_password"))
+        self.assertEqual(response.status_code, 200)

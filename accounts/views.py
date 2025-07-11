@@ -26,6 +26,12 @@ from accounts.docs.accounts_schemas import (
     deactivate_account_schema,
 )
 
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiResponse,
+    OpenApiExample,
+)
+
 from .models import User, Follow, ChatProfile
 from .serializers import (
     SignUpSerializer,
@@ -37,12 +43,6 @@ from .serializers import (
     FollowSerializer,
     ChatProfileSerializer,
     SocialSignupExtraSerializer,
-)
-
-from drf_spectacular.utils import (
-    extend_schema,
-    OpenApiResponse,
-    OpenApiExample,
 )
 
 
@@ -71,15 +71,13 @@ class UserViewSet(GenericViewSet):
     @action(detail=False, methods=["post"], url_path="signup")
     def signup(self, request):
         serializer = SignUpSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     # 회원 조회 (기본 retrieve 오버라이드)
     @extend_schema(**user_profile_schema)
-    def retrieve(self, request, *args, **kwargs):
+    def retrieve(self, _request, *_args, **_kwargs):
         instance = self.get_object()
         serializer = UserProfileSerializer(instance)
         return Response(serializer.data)
@@ -107,14 +105,12 @@ class UserViewSet(GenericViewSet):
         serializer = DeactivateAccountSerializer(
             user, data=request.data, context={"request": request}
         )
-        if serializer.is_valid(raise_exception=True):
-            user.mark_as_deactivated()
-            return Response(
-                {"detail": "계정이 탈퇴 처리되었습니다. 90일 후 완전 삭제됩니다."},
-                status=status.HTTP_200_OK,
-            )
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        user.mark_as_deactivated()
+        return Response(
+            {"detail": "계정이 탈퇴 처리되었습니다. 90일 후 완전 삭제됩니다."},
+            status=status.HTTP_200_OK,
+        )
 
 
 # 로그인

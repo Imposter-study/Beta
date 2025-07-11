@@ -4,13 +4,25 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from accounts.serializers import MyProfileSerializer, UserProfileSerializer
 
 
+# 테스트를 위한 기본 설정
+class BaseTestCase(TestCase):
+    def create_user(self, **kwargs):
+        defaults = {
+            "username": "testuser1",
+            "password": "1q2w3e4r!",
+        }
+        defaults.update(kwargs)
+        return get_user_model().objects.create_user(**defaults)
+
+    def get_access_token(self, user):
+        refresh = RefreshToken.for_user(user)
+        return str(refresh.access_token)
+
+
 # 회원 가입 테스트
-class SignUpTest(TestCase):
+class SignUpTest(BaseTestCase):
     def setUp(self):
-        self.user = get_user_model().objects.create_user(
-            username="testuser1",
-            password="1q2w3e4r!",
-        )
+        self.user = self.create_user()
 
     # 회원가입 성공 테스트
     def test_signup_success(self):
@@ -26,12 +38,10 @@ class SignUpTest(TestCase):
             # "gender": "M",
             # "introduce": "안녕하세요"
         }
-
         response = self.client.post(
             "/api/v1/accounts/signup/", signup_data, content_type="application/json"
         )
         self.assertEqual(response.status_code, 201)
-
         User = get_user_model()
         self.assertTrue(User.objects.filter(username="testuser1").exists())
 
@@ -43,7 +53,6 @@ class SignUpTest(TestCase):
             "password": "1q2w3e4r!",
             "password_confirm": "1q2w3e4r!",
         }
-
         response = self.client.post(
             "/api/v1/accounts/signup/", signup_data, content_type="application/json"
         )
@@ -57,7 +66,6 @@ class SignUpTest(TestCase):
             "password": "1q2w4r!",
             "password_confirm": "1q2w4r!",
         }
-
         response = self.client.post(
             "/api/v1/accounts/signup/", signup_data, content_type="application/json"
         )
@@ -72,26 +80,22 @@ class SignUpTest(TestCase):
             # 다른 비밀번호
             "password_confirm": "2w3e4r",
         }
-
         response = self.client.post(
             "/api/v1/accounts/signup/", signup_data, content_type="application/json"
         )
         self.assertEqual(response.status_code, 400, "비밀번호 일치")
 
 
-# 회원 조회(본인) 테스트
-class MyProfileTest(TestCase):
+# 본인 조회 테스트
+class MyProfileTest(BaseTestCase):
     def setUp(self):
-        self.user = get_user_model().objects.create_user(
-            username="testuser1",
-            password="1q2w3e4r!",
+        self.user = self.create_user(
             nickname="테스트닉네임",
             birth_date="2000-01-01",
             gender="M",
             introduce="안녕하세요",
         )
-        refresh = RefreshToken.for_user(self.user)
-        self.access_token = str(refresh.access_token)
+        self.access_token = self.get_access_token(self.user)
 
     def test_user_profile(self):
         print("\n본인 조회 테스트")
@@ -101,7 +105,6 @@ class MyProfileTest(TestCase):
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
-
         serializer = MyProfileSerializer(instance=self.user)
         print(serializer.data)
 
@@ -124,41 +127,30 @@ class MyProfileTest(TestCase):
         print(serializer.data)
 
 
-# 회원 조회(타인) 테스트
-class UserProfileTest(TestCase):
+# 타인 조회 테스트
+class UserProfileTest(BaseTestCase):
     def setUp(self):
-        self.user = get_user_model().objects.create_user(
-            username="testuser1",
-            password="1q2w3e4r!",
-        )
-        refresh = RefreshToken.for_user(self.user)
-        self.access_token = str(refresh.access_token)
+        self.user = self.create_user()
+        self.access_token = self.get_access_token(self.user)
 
     def test_user_profile(self):
         print("\n타인 조회 테스트")
-        other_user = get_user_model().objects.create_user(
-            username="other", password="1234test!"
-        )
+        other_user = self.create_user(username="other", password="1234test!")
         response = self.client.get(
             f"/api/v1/accounts/{other_user.uuid}/",
             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
-
         serializer = UserProfileSerializer(instance=other_user)
         print(serializer.data)
 
 
 # 회원 탈퇴 테스트
-class UserDeleteTest(TestCase):
+class UserDeleteTest(BaseTestCase):
     def setUp(self):
-        self.user = get_user_model().objects.create_user(
-            username="testuser1",
-            password="1q2w3e4r!",
-        )
-        refresh = RefreshToken.for_user(self.user)
-        self.access_token = str(refresh.access_token)
+        self.user = self.create_user()
+        self.access_token = self.get_access_token(self.user)
 
     def test_user_delete(self):
         print("\n회원 탈퇴 테스트")
@@ -169,6 +161,5 @@ class UserDeleteTest(TestCase):
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
-
         self.user.refresh_from_db()
         self.assertFalse(self.user.is_active)

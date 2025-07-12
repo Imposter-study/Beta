@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 from accounts.serializers import MyProfileSerializer, UserProfileSerializer
+from accounts.models import Follow
 
 
 # 테스트를 위한 기본 설정
@@ -234,3 +235,69 @@ class PasswordChangeTest(BaseTestCase):
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password("new_password"))
         self.assertEqual(response.status_code, 200)
+
+
+# 소셜 로그인 추가 정보 기입 테스트
+class SocialSignupAddInfoTest(BaseTestCase):
+    def setUp(self):
+        self.user = self.create_user()
+        self.access_token = self.get_access_token(self.user)
+
+    def test_social_signup_add_info(self):
+        print("\n소셜 로그인 추가 정보 기입 테스트")
+        response = self.client.post(
+            f"/api/v1/accounts/social/signup/add_info/",
+            data={"gender": "M", "birth_date": "2000-01-01"},
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+            content_type="application/json",
+        )
+        self.user.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+
+    def test_social_signup_add_info_jwt_fail(self):
+        print("\n소셜 로그인 추가 정보 기입 jwt 누락 테스트")
+        response = self.client.post(
+            f"/api/v1/accounts/social/signup/add_info/",
+            data={"gender": "M", "birth_date": "2000-01-01"},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 401)
+
+    def test_social_signup_add_info_invalid(self):
+        print("\n소셜 로그인 추가 정보 기입 유효성 실패 테스트")
+        response = self.client.post(
+            f"/api/v1/accounts/social/signup/add_info/",
+            data={"gender": "C", "birth_date": "2000-01-01"},
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+
+
+# 팔로우/언팔로우 토글 테스트
+class FollowToggleTest(BaseTestCase):
+    def setUp(self):
+        self.user = self.create_user()
+        self.access_token = self.get_access_token(self.user)
+        self.other_user = self.create_user(username="other", password="1234test!")
+
+    def test_follow_toggle(self):
+        print("\n팔로우/언팔로우 토글 테스트")
+        response = self.client.post(
+            f"/api/v1/accounts/follow/",
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+            content_type="application/json",
+            data={"uuid": self.other_user.uuid},
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(Follow.objects.count(), 1)
+        # 언팔로우
+        response = self.client.post(
+            f"/api/v1/accounts/follow/",
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+            content_type="application/json",
+            data={"uuid": self.other_user.uuid},
+        )
+        # 언팔로우 시의 status_code는 구현에 따라 다를 수 있음(예: 204 No Content, 200 OK 등)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Follow.objects.count(), 0)

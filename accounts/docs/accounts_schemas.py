@@ -1,8 +1,13 @@
-from drf_spectacular.utils import OpenApiResponse
+from drf_spectacular.utils import OpenApiResponse, OpenApiExample
 from accounts.serializers import (
     UserProfileSerializer,
     MyProfileSerializer,
     DeactivateAccountSerializer,
+    FollowSerializer,
+    ChatProfileSerializer,
+    SocialSignupExtraSerializer,
+    LoginSerializer,
+    PasswordChangeSerializer,
 )
 
 
@@ -86,4 +91,107 @@ deactivate_account_schema = dict(
         200: OpenApiResponse(description="회원 탈퇴"),
         404: OpenApiResponse(description="사용자를 찾을 수 없습니다."),
     },
+)
+
+
+login_schema = dict(
+    summary="로그인",
+    description="아이디와 비밀번호를 입력해주세요(JWT 토큰,닉네임, UUID 반환)",
+    request=LoginSerializer,
+    responses={
+        200: OpenApiResponse(description="로그인 성공"),
+        400: OpenApiResponse(description="올바른 아이디와, 비밀번호를 입력해주세요"),
+    },
+)
+
+logout_schema = dict(
+    summary="로그아웃",
+    description="리프레시 토큰을 받아 블랙리스트 등록",
+    request={
+        "application/json": {
+            "type": "object",
+            "properties": {
+                "refresh": {"type": "string", "example": "qweasdzxc..."},
+            },
+            "required": ["refresh"],
+        }
+    },
+    responses={
+        200: OpenApiResponse(description="로그아웃 성공"),
+        400: OpenApiResponse(description="유효하지 않은 토큰입니다."),
+    },
+)
+
+password_change_schema = dict(
+    summary="비밀번호 변경",
+    description="이전비밀번호와 새로운 비밀번호 입력",
+    request=PasswordChangeSerializer,
+    responses={
+        201: OpenApiResponse(description="비밀번호 변경 성공"),
+        400: OpenApiResponse(description="올바른 이전 비밀번호를 입력해주세요"),
+        405: OpenApiResponse(description="로그인해주세요(올바른 인증)"),
+    },
+)
+
+social_signup_add_info_schema = dict(
+    summary="소셜 회원가입 추가 정보 입력",
+    description="소셜 로그인 후 추가 정보(성별, 생년월일 등)를 입력받아 회원 정보를 완성. 헤더에 JWT access 토큰 필요.",
+    request=SocialSignupExtraSerializer,
+    responses={
+        200: OpenApiResponse(response=None, description="추가 정보 입력 완료"),
+        400: OpenApiResponse(description="유효하지 않은 입력값"),
+        401: OpenApiResponse(description="인증 실패(JWT 누락)"),
+    },
+    tags=["소셜 로그인"],
+    examples=[
+        OpenApiExample(
+            name="요청 예시",
+            value={"gender": "M", "birth_date": "1990-01-01"},
+            request_only=True,
+        ),
+        OpenApiExample(
+            name="응답 예시",
+            value={"detail": "추가 정보 입력 완료"},
+            response_only=True,
+        ),
+    ],
+)
+
+follow_toggle_schema = dict(
+    summary="팔로우/언팔로우 토글",
+    description="한 번 누르면 팔로우, 또 누르면 언팔로우되는 토글 방식 API입니다.",
+    request=FollowSerializer,
+    responses={200: FollowSerializer},
+)
+
+chat_profile_list_create_schema = dict(
+    summary="내 대화 프로필 목록 조회",
+    description="로그인한 사용자의 대화 프로필 목록을 반환합니다.",
+    responses={200: ChatProfileSerializer(many=True)},
+)
+
+chat_profile_create_schema = dict(
+    summary="대화 프로필 생성",
+    description="새로운 대화 프로필을 생성합니다. 기본 프로필로 설정 시 기존 기본은 해제됩니다.",
+    request=ChatProfileSerializer,
+    responses={201: ChatProfileSerializer},
+)
+
+chat_profile_detail_schema = dict(
+    summary="대화 프로필 조회",
+    description="특정 대화 프로필을 조회합니다.",
+    responses={200: ChatProfileSerializer},
+)
+
+chat_profile_update_schema = dict(
+    summary="대화 프로필 수정",
+    description="특정 대화 프로필을 수정합니다.",
+    request=ChatProfileSerializer,
+    responses={200: ChatProfileSerializer},
+)
+
+chat_profile_delete_schema = dict(
+    summary="대화 프로필 삭제",
+    description="특정 대화 프로필을 삭제합니다.",
+    responses={204: None},
 )

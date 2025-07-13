@@ -1,8 +1,12 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
-from accounts.serializers import MyProfileSerializer, UserProfileSerializer
-from accounts.models import Follow
+from accounts.serializers import (
+    MyProfileSerializer,
+    UserProfileSerializer,
+    ChatProfileSerializer,
+)
+from accounts.models import Follow, ChatProfile
 
 
 # 테스트를 위한 기본 설정
@@ -116,10 +120,10 @@ class MyProfileTest(BaseTestCase):
             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
             content_type="application/json",
             data={
-                "nickname": "testnickname1",
+                "nickname": "수정된 닉네임",
                 "birth_date": "2000-01-01",
                 "gender": "M",
-                "introduce": "안녕하세요!!",
+                "introduce": "수정된 소개글",
             },
         )
         self.assertEqual(response.status_code, 200)
@@ -301,3 +305,68 @@ class FollowToggleTest(BaseTestCase):
         # 언팔로우 시의 status_code는 구현에 따라 다를 수 있음(예: 204 No Content, 200 OK 등)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Follow.objects.count(), 0)
+
+
+# 대화프로필 테스트
+class ChatProfileTest(BaseTestCase):
+    def setUp(self):
+        self.user = self.create_user()
+        self.access_token = self.get_access_token(self.user)
+        self.chat_profile = ChatProfile.objects.create(
+            user=self.user, chat_nickname="미리 생성된 캐릭터"
+        )
+
+    def test_chat_profile_create(self):
+        print("\n대화프로필 생성 테스트")
+        response = self.client.post(
+            f"/api/v1/accounts/chat_profiles/",
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+            content_type="application/json",
+            data={
+                "chat_nickname": "캐릭터가 날 부르는 이름",
+                "chat_description": "소개글",
+                "is_default": False,
+            },
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(ChatProfile.objects.count(), 2)
+
+    def test_chat_profile(self):
+        print("\n대화프로필 조회 테스트")
+        response = self.client.get(
+            f"/api/v1/accounts/chat_profiles/",
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ChatProfile.objects.count(), 1)
+        serializer = ChatProfileSerializer(instance=self.chat_profile)
+        print(serializer.data)
+
+    def test_chat_profile_update(self):
+        print("\n대화프로필 수정 테스트")
+        response = self.client.put(
+            f"/api/v1/accounts/chat_profiles/{self.chat_profile.uuid}/",
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+            content_type="application/json",
+            data={
+                "chat_nickname": "수정된 캐릭터가 날 부르는 이름",
+                "chat_description": "수정된 소개글",
+                "is_default": False,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ChatProfile.objects.count(), 1)
+        self.chat_profile.refresh_from_db()
+        serializer = ChatProfileSerializer(instance=self.chat_profile)
+        print(serializer.data)
+
+    def test_chat_profile_delete(self):
+        print("\n대화프로필 삭제 테스트")
+        response = self.client.delete(
+            f"/api/v1/accounts/chat_profiles/{self.chat_profile.uuid}/",
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(ChatProfile.objects.count(), 0)

@@ -1,12 +1,20 @@
-from django.test import TestCase
+from django.test import TestCase, RequestFactory
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.test import APIClient
+from rest_framework.response import Response
+
+
 from accounts.serializers import (
     MyProfileSerializer,
     UserProfileSerializer,
     ChatProfileSerializer,
 )
 from accounts.models import Follow, ChatProfile
+from accounts.views import KakaoLogin
+
+from allauth.socialaccount.models import SocialAccount
+from unittest.mock import patch
 
 
 # 테스트를 위한 기본 설정
@@ -370,3 +378,123 @@ class ChatProfileTest(BaseTestCase):
         )
         self.assertEqual(response.status_code, 204)
         self.assertEqual(ChatProfile.objects.count(), 0)
+
+
+# 카카오 소셜 로그인 테스트
+class KakaoLoginTest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.User = get_user_model()
+
+    def test_kakao_login_complete_profile(self):
+        """완성된 프로필을 가진 사용자의 카카오 로그인 테스트"""
+        print("\n카카오 소셜 로그인 테스트(완성된 프로필)")
+
+        # 완성된 프로필을 가진 사용자 생성
+        test_user = self.User.objects.create_user(
+            username="kakao_123456789",
+            email="test@example.com",
+            gender="M",  # 성별 설정됨
+            birth_date="1990-01-01",  # 생년월일 설정됨
+        )
+
+        # SocialAccount 생성
+        social_account = SocialAccount.objects.create(
+            user=test_user, provider="kakao", uid="123456789"
+        )
+
+        # KakaoLogin view 직접 테스트
+        factory = RequestFactory()
+        request = factory.post(
+            "/api/v1/accounts/kakao/login/", {"access_token": "fake_token"}
+        )
+        request.user = test_user
+
+        # KakaoLogin view 인스턴스 생성
+        view = KakaoLogin()
+        view.request = request
+
+        # 부모 클래스의 post 메서드를 mock하여 성공 응답 시뮬레이션
+        with patch(
+            "dj_rest_auth.registration.views.SocialLoginView.post"
+        ) as mock_super:
+            mock_super.return_value = Response(
+                {"user": {"email": "test@example.com", "username": "kakao_123456789"}},
+                status=200,
+            )
+
+            # 실제 KakaoLogin의 post 메서드 호출
+            response = view.post(request)
+
+        # 응답 검증
+        print(f"Response data: {response.data}")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("access", response.data)
+        self.assertIn("refresh", response.data)
+        self.assertIn("uuid", response.data)
+        self.assertEqual(response.data["is_signup"], True)
+
+        # SocialAccount 존재 검증
+        self.assertTrue(
+            SocialAccount.objects.filter(provider="kakao", uid="123456789").exists()
+        )
+
+    def test_kakao_login_incomplete_profile(self):
+        """미완성 프로필을 가진 사용자의 카카오 로그인 테스트"""
+        print("\n카카오 소셜 로그인 테스트(미완성 프로필)")
+
+        # 미완성 프로필을 가진 사용자 생성
+        test_user = self.User.objects.create_user(
+            username="kakao_987654321",
+            email="incomplete@example.com",
+            gender="O",  # 미설정 상태
+            birth_date=None,  # 미설정 상태
+        )
+
+        # SocialAccount 생성
+        social_account = SocialAccount.objects.create(
+            user=test_user, provider="kakao", uid="987654321"
+        )
+
+        factory = RequestFactory()
+        request = factory.post(
+            "/api/v1/accounts/kakao/login/", {"access_token": "fake_token"}
+        )
+        request.user = test_user
+
+        # KakaoLogin view 인스턴스 생성
+        view = KakaoLogin()
+        view.request = request
+
+        # 부모 클래스의 post 메서드를 mock하여 성공 응답 시뮬레이션
+        with patch(
+            "dj_rest_auth.registration.views.SocialLoginView.post"
+        ) as mock_super:
+            mock_super.return_value = Response(
+                {
+                    "user": {
+                        "email": "incomplete@example.com",
+                        "username": "kakao_987654321",
+                    }
+                },
+                status=200,
+            )
+
+            # 실제 KakaoLogin의 post 메서드 호출
+            response = view.post(request)
+
+        # 응답 검증 - 미완성 프로필은 is_signup: False
+        print(f"Response data: {response.data}")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("access", response.data)
+        self.assertIn("refresh", response.data)
+        self.assertIn("kakao_id", response.data)
+        self.assertEqual(response.data["is_signup"], False)
+        self.assertEqual(response.data["kakao_id"], "987654321")
+
+        # SocialAccount 존재 검증
+        self.assertTrue(
+            SocialAccount.objects.filter(provider="kakao", uid="987654321").exists()
+        )

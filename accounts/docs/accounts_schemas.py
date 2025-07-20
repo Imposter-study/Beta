@@ -133,29 +133,6 @@ password_change_schema = dict(
     },
 )
 
-social_signup_add_info_schema = dict(
-    summary="소셜 회원가입 추가 정보 입력",
-    description="소셜 로그인 후 추가 정보(성별, 생년월일 등)를 입력받아 회원 정보를 완성. 헤더에 JWT access 토큰 필요.",
-    request=SocialSignupExtraSerializer,
-    responses={
-        200: OpenApiResponse(response=None, description="추가 정보 입력 완료"),
-        400: OpenApiResponse(description="유효하지 않은 입력값"),
-        401: OpenApiResponse(description="인증 실패(JWT 누락)"),
-    },
-    tags=["소셜 로그인"],
-    examples=[
-        OpenApiExample(
-            name="요청 예시",
-            value={"gender": "M", "birth_date": "1990-01-01"},
-            request_only=True,
-        ),
-        OpenApiExample(
-            name="응답 예시",
-            value={"detail": "추가 정보 입력 완료"},
-            response_only=True,
-        ),
-    ],
-)
 
 follow_toggle_schema = dict(
     summary="팔로우/언팔로우 토글",
@@ -194,4 +171,52 @@ chat_profile_delete_schema = dict(
     summary="대화 프로필 삭제",
     description="특정 대화 프로필을 삭제합니다.",
     responses={204: None},
+)
+
+kakao_login_schema = dict(
+    summary="카카오 소셜 로그인",
+    description="카카오 OAuth2 인증을 통해 소셜 로그인을 수행합니다.",
+    responses={
+        200: OpenApiResponse(description="로그인 성공. JWT 토큰 등 인증 정보 반환."),
+        400: OpenApiResponse(
+            description="인증 실패. 잘못된 토큰 또는 유효하지 않은 요청."
+        ),
+    },
+    tags=["소셜 로그인"],
+)
+
+google_login_schema = dict(
+    summary="구글 소셜 로그인",
+    description="구글 OAuth2 인증을 통해 소셜 로그인을 수행합니다.",
+    responses={
+        200: OpenApiResponse(description="로그인 성공. JWT 토큰 등 인증 정보 반환."),
+        400: OpenApiResponse(
+            description="인증 실패. 잘못된 토큰 또는 유효하지 않은 요청."
+        ),
+    },
+    tags=["소셜 로그인"],
+)
+
+social_signup_add_info_schema = dict(
+    summary="소셜 회원가입 추가 정보 입력",
+    description="소셜 로그인 후 추가 정보(성별, 생년월일 등)를 입력받아 회원 정보를 완성. 헤더에 JWT access 토큰 필요.",
+    request=SocialSignupExtraSerializer,
+    responses={
+        200: OpenApiResponse(response=None, description="추가 정보 입력 완료"),
+        400: OpenApiResponse(description="유효하지 않은 입력값"),
+        401: OpenApiResponse(description="인증 실패(JWT 누락)"),
+    },
+    tags=["소셜 로그인"],
+    examples=[
+        OpenApiExample(
+            name="요청 예시",
+            value={"gender": "M", "birth_date": "1990-01-01"},
+            request_only=True,
+        ),
+        OpenApiExample(
+            name="응답 예시",
+            value={"detail": "추가 정보 입력 완료"},
+            response_only=True,
+        ),
+    ],
 )

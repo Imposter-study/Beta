@@ -18,6 +18,7 @@ from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from allauth.socialaccount.providers.kakao import views as kakao_view
 from allauth.socialaccount.providers.google import views as google_view
 
+from accounts.services import build_social_login_response
 from accounts.docs.accounts_schemas import (
     signup_schema,
     user_profile_schema,
@@ -192,34 +193,15 @@ class KakaoLogin(SocialLoginView):
     @extend_schema(**kakao_login_schema)
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
-
         user = request.user
         social_account = SocialAccount.objects.filter(
             user=user, provider="kakao"
         ).first()
-        # JWT 토큰 발급
-        refresh = RefreshToken.for_user(user)
-        access_token = str(refresh.access_token)
-        refresh_token = str(refresh)
 
-        # 프로필 정보가 아직 없는 경우
-        if user.gender == "O" or not user.birth_date:
-            return Response(
-                {
-                    "is_signup": False,
-                    "kakao_id": social_account.uid,
-                    "uuid": user.uuid,
-                    "access": access_token,
-                    "refresh": refresh_token,
-                },
-                status=status.HTTP_200_OK,
-            )
-
-        # 기존 회원이면 토큰 포함 정상 로그인 응답
-        response.data["is_signup"] = True
-        response.data["uuid"] = user.uuid
-        response.data["access"] = access_token
-        response.data["refresh"] = refresh_token
+        data, is_signup = build_social_login_response(user, social_account, "kakao")
+        if not is_signup:
+            return Response(data, status=status.HTTP_200_OK)
+        response.data.update(data)
         return response
 
 
@@ -239,35 +221,15 @@ class GoogleLogin(SocialLoginView):
     @extend_schema(**google_login_schema)
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
-
         user = request.user
         social_account = SocialAccount.objects.filter(
-            user=user, provider="google"
+            user=user, provider="kakao"
         ).first()
 
-        # JWT 토큰 발급
-        refresh = RefreshToken.for_user(user)
-        access_token = str(refresh.access_token)
-        refresh_token = str(refresh)
-
-        # 프로필 정보가 아직 없는 경우
-        if user.gender == "O" or not user.birth_date:
-            return Response(
-                {
-                    "is_signup": False,
-                    "google_id": social_account.uid,
-                    "uuid": user.uuid,
-                    "access": access_token,
-                    "refresh": refresh_token,
-                },
-                status=status.HTTP_200_OK,
-            )
-
-        # 기존 회원이면 토큰 포함 정상 로그인 응답
-        response.data["is_signup"] = True
-        response.data["uuid"] = user.uuid
-        response.data["access"] = access_token
-        response.data["refresh"] = refresh_token
+        data, is_signup = build_social_login_response(user, social_account, "google")
+        if not is_signup:
+            return Response(data, status=status.HTTP_200_OK)
+        response.data.update(data)
         return response
 
 

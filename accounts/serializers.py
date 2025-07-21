@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate
 from characters.serializers import UserProfileCharacterSerializer
 from .models import Follow, User, ChatProfile
+from .validators import validate_username, validate_password, validate_passwords_confirm
 
 User = get_user_model()
 
@@ -39,31 +40,14 @@ class SignUpSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
-    # 유저네임 검증
     def validate_username(self, value):
-        if not value:
-            raise serializers.ValidationError("아이디를 입력해주세요.")
-        if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError("이미 존재하는 아이디입니다.")
-        return value
+        return validate_username(value)
 
-    # 비밀번호 검증
     def validate_password(self, value):
-        if len(value) < 8:
-            raise serializers.ValidationError("비밀번호는 최소 8자 이상이어야 합니다.")
-        return value
+        return validate_password(value)
 
-    # 비밀번호 확인 및 일치 여부 검증
     def validate(self, data):
-        password = data.get("password")
-        password_confirm = data.get("password_confirm")
-
-        if password != password_confirm:
-            raise serializers.ValidationError(
-                {"password_confirm": "비밀번호가 일치하지 않습니다."}
-            )
-
-        return data
+        return validate_passwords_confirm(data)
 
 
 # 로그인
